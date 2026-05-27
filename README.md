@@ -1,4 +1,4 @@
-# Truequify (nombre sujeto a cambios)
+# Bartify
 
 Aplicacion de venta y trueque de artículos de segunda mano para Integradora 2
 
