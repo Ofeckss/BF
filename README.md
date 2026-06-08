@@ -11,7 +11,7 @@ Rashmy Amarilis Cortes Martinez
 
 ## Instalación
 1. Utiliza el comando `git clone https://github.com/Ofeckss/BF.git` en una carpeta para descargar el proyecto.
-2. Entrar a la carpeta pokeapp.
+2. Entrar a la carpeta BF.
 3. Escribir el siguiente comando en la terminal: `npm install`.
 4. Utilizar el comando `git pull origin main` para descargar los cambios antes de comenzar a programar.
 
