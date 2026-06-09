@@ -133,17 +133,17 @@ const formatPrice = (value) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: auto; /* Empuja esta sección siempre abajo del todo */
+  margin-top: auto; 
 }
 
 .product-price {
   font-size: 1.4rem;
   font-weight: bold;
-  color: var(--brand-red); /* Tu color rojo oscuro para el precio */
+  color: var(--brand-red); 
 }
 
 .status-badge {
-  background-color: #D3D8B4; /* Verde seco suave para el "Buen Estado" */
+  background-color: #D3D8B4; 
   color: #2B331F;
   font-size: 0.8rem;
   font-weight: bold;

@@ -3,6 +3,7 @@
   
     <MainNavbar />
     <main class="page-content">
+      <router-view />
       <HeroBanner />
       
       <div class="products-container"></div>
