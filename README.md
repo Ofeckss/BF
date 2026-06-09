@@ -24,6 +24,8 @@ Rashmy Amarilis Cortes Martinez
 La primera vez que se quiera subir un cambio al repositorio debe usarse el comando
 `git push -u origin main`
 
+## Instalación de instancias Frontend
+1. Para instalación de Pinia usa el comando `npm install pinia vue-router@4` (esta instancia creará las rutas entre las páginas)
 ## Backend setup
 
 En el folder back (cd back), ejecuten:
