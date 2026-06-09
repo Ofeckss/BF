@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,6 +7,27 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+// Register AppDbContext when a connection string is provided in configuration
+var conn = builder.Configuration.GetConnectionString("Default")
+           ?? Environment.GetEnvironmentVariable("ConnectionStrings__Default");
+if (!string.IsNullOrEmpty(conn))
+{
+    builder.Services.AddDbContext<back.Data.AppDbContext>(options =>
+        options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+}
 
 var app = builder.Build();
 
@@ -15,6 +38,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
