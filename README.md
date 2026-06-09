@@ -24,4 +24,17 @@ Rashmy Amarilis Cortes Martinez
 La primera vez que se quiera subir un cambio al repositorio debe usarse el comando
 `git push -u origin main`
 
+## Base de Datos
+
+En el folder back (cd back), ejecuten:
+
+```bash
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:Default" "Server=<HOST>;Port=<PORT>;Database=<DB>;User=<USER>;Password=<PASSWORD>;SslMode=Required;"
+dotnet run
+```
+
+**Nota:** Obtener las credenciales de base de datos del líder del equipo o en el servidor compartido. No commits credenciales reales.
+
+
 ## Commits
