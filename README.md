@@ -24,7 +24,7 @@ Rashmy Amarilis Cortes Martinez
 La primera vez que se quiera subir un cambio al repositorio debe usarse el comando
 `git push -u origin main`
 
-## Base de Datos
+## Backend setup
 
 En el folder back (cd back), ejecuten:
 
