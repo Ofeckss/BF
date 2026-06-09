@@ -24,17 +24,19 @@ Rashmy Amarilis Cortes Martinez
 La primera vez que se quiera subir un cambio al repositorio debe usarse el comando
 `git push -u origin main`
 
-## Base de Datos
+## Instalación de instancias Frontend
+1. Para instalación de Pinia usa el comando `npm install pinia vue-router@4` (esta instancia creará las rutas entre las páginas)
+## Backend setup
 
 En el folder back (cd back), ejecuten:
 
 ```bash
 dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:Default" "Server=<HOST>;Port=<PORT>;Database=<DB>;User=<USER>;Password=<PASSWORD>;SslMode=Required;"
+[EL COMANDO QUE YO LES PASÉ]
 dotnet run
 ```
 
-**Nota:** Obtener las credenciales de base de datos del líder del equipo o en el servidor compartido. No commits credenciales reales.
-
 
 ## Commits
+
+Ofeck - Se terminó el setup del backend y se hicieron los endpoints de login y register
