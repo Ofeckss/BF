@@ -2,11 +2,7 @@ namespace back.Models;
 
 public record RegisterRequest(
     string Nombre,
-    string Apellido,
-    int Edad,
-    string? NumeroCel,
-    string? Correo,
-    double Rating,
+    string Correo,
     string Password
 );
 

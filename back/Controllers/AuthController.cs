@@ -28,11 +28,11 @@ public class AuthController : ControllerBase
         var usuario = new Usuario
         {
             Nombre = request.Nombre,
-            Apellido = request.Apellido,
-            Edad = request.Edad,
-            NumeroCel = request.NumeroCel,
+            Apellido = string.Empty,
+            Edad = 0,
+            NumeroCel = null,
             Correo = request.Correo,
-            Rating = request.Rating,
+            Rating = 0,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
         };
 
