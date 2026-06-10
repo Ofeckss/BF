@@ -1,10 +1,14 @@
-<template> 
-    <div class="hero-banner"> 
-        <h1 class="hero-title">Bartify</h1> 
-        <p class="hero-description"> 
-      Compra, vende e intercambia con tus vecinos en <br>  <strong>Playa del Carmen</strong>  </p> <span class="hero-footer">Encuentra artículos únicos de segunda mano cerca de ti</span> 
-    </div>     
-</template> 
+<template>
+  <div class="hero-banner">
+    <h1 class="hero-title">Bartify</h1>
+    <p class="hero-description">
+      Compra, vende e intercambia con tus vecinos en <br>
+      <strong>Playa del Carmen</strong>
+    </p>
+    <span class="hero-footer">Encuentra artículos únicos de segunda mano cerca de ti</span>
+  </div>
+</template>
+
 <style scoped>
 .hero-banner {
   background-color: var(--brand-red);

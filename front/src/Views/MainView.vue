@@ -1,5 +1,5 @@
 <template>
-  <div class="page-content">
+  <div class="main-view-container">
     <HeroBanner />
     
     <div class="products-grid">
@@ -35,15 +35,13 @@ const articuloUnico = ref({
 })
 
 const irAlDetalle = () => {
-  router.push('/articulo') // Te manda a la nueva vista del artículo
+  router.push('/articulo')
 }
 </script>
 
 <style scoped>
-.page-content {
-  padding: 40px 40px; 
-  max-width: 1440px; 
-  margin: 0 auto;
+.main-view-container {
+  padding-top: 20px; 
 }
 
 .products-grid {
