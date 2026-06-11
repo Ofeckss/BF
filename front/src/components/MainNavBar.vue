@@ -32,7 +32,7 @@
       <!-- Botón de Cuenta (Maneja el estado con Pinia) -->
       <button 
         v-if="!auth.isLoggedIn" 
-        @click="router.push('/opciones-login')"
+        @click="router.push('/login')"
         class="btn-nav-badge"
       >
         <div class="icon-circle account-lavender">
