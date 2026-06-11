@@ -1,12 +1,13 @@
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue' 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 
-defineEmits(['cambiarVista'])
-
 const router = useRouter()
 const auth = useAuthStore()
+
+
+const isLoading = ref(false)
 
 const registerForm = reactive({
   name: '',
@@ -14,95 +15,126 @@ const registerForm = reactive({
   password: ''
 })
 
-const handleRegister = () => {
-  console.log('Datos Registro:', { name: registerForm.name, email: registerForm.email })
-  if (registerForm.email) {
-    auth.loginUser(registerForm.email)
-    router.push('/')
+const handleRegister = async () => {
+  isLoading.value = true 
+  try {
+
+    await auth.registerUser(registerForm.name, registerForm.email, registerForm.password)
+    
+    alert("Cuenta creada exitosamente")
+    router.push('/login')
+  } catch (error) {
+    console.error("Error al registrar:", error)
+    alert("Hubo un error al registrar. Verifica tu conexión o intenta con otro correo.")
+  } finally {
+    isLoading.value = false 
   }
 }
 </script>
 
 <template>
-  <div class="view-fade">
-    <h1 class="logo-title-left">Únete a Bartify</h1>
-    <p class="subtitle-left">Crea tu cuenta y empieza a vender o cambiar</p>
-    
-    <form @submit.prevent="handleRegister" class="form-layout">
-      <div class="input-container">
-        <label class="form-label" for="name">Nombre</label>
-        <input type="text" id="name" v-model="registerForm.name" class="form-input" required />
+  <div class="auth-page-container">
+    <div class="auth-card view-fade">
+      <h1 class="logo-title-left">Únete a Bartify</h1>
+      <p class="subtitle-left">Crea tu cuenta y empieza a vender o cambiar</p>
+      
+      <form @submit.prevent="handleRegister" class="form-layout">
+        <div class="input-container">
+          <label class="form-label" for="name">Nombre</label>
+          <input type="text" id="name" v-model="registerForm.name" class="form-input" required />
+        </div>
+
+        <div class="input-container">
+          <label class="form-label" for="email">Correo Electrónico</label>
+          <input type="email" id="email" v-model="registerForm.email" class="form-input" required />
+        </div>
+
+        <div class="input-container">
+          <label class="form-label" for="password">Contraseña</label>
+          <input type="password" id="password" v-model="registerForm.password" class="form-input" required />
+        </div>
+        
+        <button 
+          type="submit" 
+          class="btn-orange" 
+          :disabled="isLoading"
+        >
+          {{ isLoading ? 'Procesando...' : 'Registrarse' }}
+        </button>
+      </form>
+
+      <div class="switch-view-link" @click="router.push('/login')">
+        ¿Ya tienes cuenta? Inicia Sesión aquí
       </div>
 
-      <div class="input-container">
-        <label class="form-label" for="email">Correo Electrónico</label>
-        <input type="email" id="email" v-model="registerForm.email" class="form-input" required />
-      </div>
-      
-      <div class="input-container">
-        <label class="form-label" for="password">Contraseña</label>
-        <input type="password" id="password" v-model="registerForm.password" class="form-input" required />
-      </div>
-      
-      <button type="submit" class="btn-orange">REGISTRAR</button>
-    </form>
-    
-    <p @click="$emit('cambiarVista', 'login')" class="switch-view-link">
-      ¿Ya tienes cuenta? Inicia sesión
-    </p>
-    
-    <div class="divider-container">
-      <div class="line"></div>
-      <span class="divider-text">O</span>
-      <div class="line"></div>
+      <button type="button" @click="router.push('/')" class="btn-explorar-secundario">
+        Explorar sin cuenta
+      </button>
     </div>
-    
-    <button @click="router.push('/')" class="btn-light block-btn">
-      Explorar sin Cuenta
-    </button>
   </div>
 </template>
 
 <style scoped>
+
+.auth-page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 85vh;
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+.auth-card {
+  background-color: #FFFFFF;
+  border-radius: 32px;
+  border: 4px solid var(--brand-brown);
+  padding: 45px 35px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 440px;
+}
+
 .logo-title-left {
-  font-size: 2.4rem;
-  color: var(--brand-orange);
-  margin: 0 0 8px 0;
-  font-weight: bold;
   text-align: left;
+  font-size: 2.2rem;
+  color: var(--brand-orange);
+  margin: 0 0 12px 0;
+  font-weight: bold;
 }
 
 .subtitle-left {
-  color: #555555;
-  margin: 0 0 25px 0;
-  font-size: 1rem;
   text-align: left;
+  color: #555555;
+  margin: 0 0 35px 0;
+  font-size: 1.1rem;
+  line-height: 1.4;
 }
 
 .form-layout {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .input-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .form-label {
+  font-weight: bold;
+  color: var(--brand-brown);
   font-size: 0.95rem;
-  font-weight: 600;
-  color: #333333;
-  padding-left: 4px;
 }
 
 .form-input {
   background-color: var(--brand-dark-gray);
   border: 3px solid var(--brand-brown);
   border-radius: 20px;
-  padding: 12px 16px;
+  padding: 14px 18px;
   font-size: 1.05rem;
   color: #FFFFFF;
   width: 100%;
@@ -119,7 +151,7 @@ const handleRegister = () => {
   color: #FFFFFF;
   border: none;
   border-radius: 16px;
-  padding: 14px;
+  padding: 15px;
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
@@ -128,71 +160,43 @@ const handleRegister = () => {
   width: 100%;
 }
 
-.btn-orange:hover {
+.btn-orange:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+}
+
+.btn-orange:hover:not(:disabled) {
   background-color: var(--brand-red);
-}
-
-.btn-light {
-  background-color: #DCDCDC;
-  color: #222222;
-  border: none;
-  border-radius: 16px;
-  padding: 14px;
-  font-size: 1.05rem;
-  font-weight: bold;
-  cursor: pointer;
-  text-align: center;
-  width: 100%;
-}
-
-.btn-light:hover {
-  background-color: #CECECE;
-}
-
-.block-btn {
-  width: 100%;
 }
 
 .switch-view-link {
   text-align: center;
   color: var(--brand-orange);
-  font-size: 0.95rem;
+  margin-top: 20px;
   cursor: pointer;
-  margin: 20px 0 0 0;
-  text-decoration: underline;
+  font-weight: bold;
 }
 
 .switch-view-link:hover {
-  color: var(--brand-red);
+  text-decoration: underline;
 }
 
-.divider-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 20px 0;
+.btn-explorar-secundario {
+  background-color: #E0E0E0;
+  color: #333333;
+  border: none;
+  border-radius: 16px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
   width: 100%;
+  margin-top: 20px; 
+  text-align: center;
+  transition: background-color 0.2s;
 }
 
-.line { 
-  flex: 1; 
-  height: 2px; 
-  background-color: var(--brand-orange); 
-  opacity: 0.4; 
-}
-
-.divider-text { 
-  padding: 0 15px; 
-  font-weight: bold; 
-  color: #222222;
-}
-
-.view-fade { 
-  animation: fadeIn 0.3s ease-in-out; 
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+.btn-explorar-secundario:hover {
+  background-color: #D0D0D0;
 }
 </style>

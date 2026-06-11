@@ -1,61 +1,86 @@
-<!-- src/components/auth/AuthLogin.vue -->
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 
-defineEmits(['cambiarVista'])
-
 const router = useRouter()
 const auth = useAuthStore()
+
+const isLoading = ref(false)
 
 const loginForm = reactive({
   email: '',
   password: ''
 })
 
-const handleLogin = () => {
-  if (loginForm.email) {
-    auth.loginUser(loginForm.email)
+const handleLogin = async () => {
+  isLoading.value = true 
+  try {
+    await auth.loginUser(loginForm.email, loginForm.password)
     router.push('/')
+  } catch (error) {
+    console.error("Error al iniciar sesión:", error)
+    alert("Credenciales incorrectas o servidor no disponible")
+  } finally {
+    isLoading.value = false 
   }
 }
 </script>
 
 <template>
-  <div class="view-fade">
-    <h1 class="logo-title">Bartify</h1>
-    <p class="subtitle">Inicia Sesion para continuar</p>
-    
-    <form @submit.prevent="handleLogin" class="form-layout">
-      <div class="input-container">
-        <label class="form-label">Correo Electronico</label>
-        <input type="email" v-model="loginForm.email" class="form-input" required />
-      </div>
+  <div class="auth-page-container">
+    <div class="auth-card view-fade">
+      <h1 class="logo-title">Bartify</h1>
+      <p class="subtitle">Inicia Sesión para continuar</p>
       
-      <div class="input-container">
-        <label class="form-label">Contraseña</label>
-        <input type="password" v-model="loginForm.password" class="form-input" required />
+      <form @submit.prevent="handleLogin" class="form-layout">
+        <div class="input-container">
+          <label class="form-label">Correo Electrónico</label>
+          <input type="email" v-model="loginForm.email" class="form-input" required />
+        </div>
+        
+        <div class="input-container">
+          <label class="form-label">Contraseña</label>
+          <input type="password" v-model="loginForm.password" class="form-input" required />
+        </div>
+        
+        <button 
+          type="submit" 
+          class="btn-orange" 
+          :disabled="isLoading"
+        >
+          {{ isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
+        </button>
+      </form>
+
+      <div class="switch-view-link" @click="router.push('/registro')">
+        ¿No tienes cuenta? Regístrate aquí
       </div>
-      
-      <button type="submit" class="btn-orange">Iniciar Sesion</button>
-    </form>
-    
-    <p class="forgot-password">Olvidaste tu Contraseña?</p>
-    
-    <div class="divider-container">
-      <div class="line"></div>
-      <span class="divider-text">O</span>
-      <div class="line"></div>
     </div>
-    
-    <p @click="$emit('cambiarVista', 'registro')" class="switch-view-link">
-      No tienes cuenta? Registrate
-    </p>
   </div>
 </template>
 
 <style scoped>
+.auth-page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 85vh;
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+.auth-card {
+  background-color: #FFFFFF;
+  border-radius: 32px;
+  border: 4px solid var(--brand-brown);
+  padding: 45px 35px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 440px;
+}
+
 .logo-title {
   text-align: center;
   font-size: 3rem;
@@ -69,6 +94,7 @@ const handleLogin = () => {
   color: #555555;
   margin: 0 0 35px 0;
   font-size: 1.1rem;
+  line-height: 1.4;
 }
 
 .form-layout {
@@ -80,14 +106,13 @@ const handleLogin = () => {
 .input-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .form-label {
+  font-weight: bold;
+  color: var(--brand-brown);
   font-size: 0.95rem;
-  font-weight: 600;
-  color: #333333;
-  padding-left: 4px;
 }
 
 .form-input {
@@ -120,58 +145,24 @@ const handleLogin = () => {
   width: 100%;
 }
 
-.btn-orange:hover {
-  background-color: var(--brand-orange);
+.btn-orange:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
 }
 
-.forgot-password {
-  text-align: center;
-  color: #333333;
-  font-size: 0.95rem;
-  margin: 20px 0 10px 0;
-  cursor: pointer;
+.btn-orange:hover:not(:disabled) {
+  background-color: var(--brand-orange);
 }
 
 .switch-view-link {
   text-align: center;
-  color: #222222;
-  font-size: 1.05rem;
+  color: var(--brand-orange);
+  margin-top: 20px;
   cursor: pointer;
-  margin: 15px 0 0 0;
+  font-weight: bold;
 }
 
 .switch-view-link:hover {
   text-decoration: underline;
-  color: var(--brand-orange);
-}
-
-.divider-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 20px 0;
-  width: 100%;
-}
-
-.line {
-  flex: 1;
-  height: 2px;
-  background-color: #FF623E;
-  opacity: 0.5;
-}
-
-.divider-text {
-  padding: 0 15px;
-  color: #222222;
-  font-weight: bold;
-}
-
-.view-fade {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 </style>
