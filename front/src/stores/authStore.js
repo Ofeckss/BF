@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import axios from 'axios'
+import conectarApi from '../services/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const savedUser = localStorage.getItem('user')
@@ -10,7 +10,7 @@ export const useAuthStore = defineStore('auth', () => {
   const registerUser = async (name, email, password) => {
     isLoading.value = true
     try {
-      await axios.post('http://localhost:5000/Usuarios', { 
+      await conectarApi.post('/auth/register', {
         Nombre: name,
         Correo: email,
         Password: password,
@@ -23,17 +23,17 @@ export const useAuthStore = defineStore('auth', () => {
   const loginUser = async (email, password) => {
     isLoading.value = true
     try {
-      const response = await axios.get('http://localhost:5000/Usuarios')
-      const usuarioEncontrado = response.data.find(u => u.correo === email)
-
-      if (!usuarioEncontrado) {
-        throw new Error("Usuario no encontrado")
+      const response = await conectarApi.post('/auth/login', {
+        Correo: email,
+        Password: password,
+      })
+      const userData = {
+        email: response.data.correo,
+        name: response.data.nombre,
+        id: response.data.id
       }
-
-      const userData = { email: usuarioEncontrado.correo, name: usuarioEncontrado.nombre }
       user.value = userData
       localStorage.setItem('user', JSON.stringify(userData))
-      
       return true
     } catch (error) {
       console.error("Error al loguear:", error)

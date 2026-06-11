@@ -1,11 +1,10 @@
-import axios from "axios";
 import conectarApi from "./api";
 
 export default {
     getAll() {
-        return conectarApi.get('/usuarios')
+        return conectarApi.get('/Usuarios')
     },
-    create(nuevoUsuario){
-        return crearUsuarioApi.post('/auth/register', nuevoUsuario)
+    create(nuevoUsuario) {
+        return conectarApi.post('/auth/register', nuevoUsuario)
     }
 }

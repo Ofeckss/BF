@@ -1,15 +1,14 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue'
-import usuariosApi from '../services/UsuariosApi';
+import usuariosApi from '../services/usuariosApi';
 
-export const usuariosStore = defineStore('user', {
+export const useUsuariosStore = defineStore('user', {
     state: () => ({
         users: [],
         error: ''
     }),
     actions: {
         async fetchUsuarios() {
-            try{
+            try {
                 const res = await usuariosApi.getAll();
                 this.users = res.data;
             } catch (error) {
@@ -17,16 +16,16 @@ export const usuariosStore = defineStore('user', {
                 console.log(this.error)
             } finally {
                 console.log(this.users)
-                console.log('Petición exitosa')
             }
         },
-        async crearUsuario(nuevoUsuario){
+        async crearUsuario(nuevoUsuario) {
             try {
                 const res = await usuariosApi.create(nuevoUsuario);
+                return res.data;
             } catch (error) {
                 this.error = error.message;
                 throw error;
             }
         }
     }
-})
+});

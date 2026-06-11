@@ -19,9 +19,9 @@
 
 <script setup>
 import { onMounted } from 'vue';
-import { usuariosStore } from '../stores/usuariosStore';
+import { useUsuariosStore } from '../stores/usuariosStore';
 
-const productStore = usuariosStore();
+const productStore = useUsuariosStore();
 
 const cargarDatos = () => {
   productStore.fetchUsuarios();
@@ -31,4 +31,3 @@ onMounted(() => {
   cargarDatos();
 });
 </script>
-
