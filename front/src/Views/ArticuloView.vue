@@ -1,21 +1,35 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useProductosStore } from '../stores/productosStore'
 
 const router = useRouter()
+const route = useRoute()
+const productosStore = useProductosStore()
 
+const productId = computed(() => route.params.id)
 
-const articulo = ref({
-  title: 'MacBook Pro 2019',
-  location: 'Playa del Carmen',
-  price: 10900,
-  status: 'Buen Estado',
-  description: 'Se vende o cambia MacBook Pro 2019 en excelente estado físico y funcional. Cuenta con procesador Intel Core i7, 16GB de memoria RAM y 512GB de almacenamiento SSD. Pantalla Retina intacta sin detalles de pixeles. Se entrega con su cargador original USB-C.',
-  tags: ['Electrónicos', 'Cambio', 'Venta'],
+const fallbackArticulo = {
+  title: 'Artículo no encontrado',
+  location: '—',
+  price: 0,
+  status: 'No disponible',
+  description: 'No se encontró el artículo solicitado.',
+  tags: [],
   image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600&auto=format&fit=crop',
-  owner: {
-    name: 'Carlos Mendoza'
-  }
+  owner: 'Desconocido'
+}
+
+const articulo = computed(() => {
+  const found = productosStore.getProductById(productId.value)
+  return found ? found : fallbackArticulo
+})
+
+const ownerName = computed(() => {
+  const o = articulo.value.owner
+  if (!o) return 'Desconocido'
+  if (typeof o === 'string') return o
+  return o.name || 'Desconocido'
 })
 
 const regresar = () => {
@@ -23,19 +37,20 @@ const regresar = () => {
 }
 
 const contactarPropietario = () => {
-  alert(`Abriendo chat con ${articulo.value.owner.name} para negociar el artículo: ${articulo.value.title}`)
+  if (articulo.value.title === fallbackArticulo.title) return
+  alert(`Abriendo chat con ${ownerName.value} para negociar el artículo: ${articulo.value.title}`)
 }
 </script>
 
 <template>
   <div class="product-detail-container">
-    
+
     <button @click="regresar" class="btn-back">
       ← Volver al inicio
     </button>
 
     <div class="product-columns-wrapper">
-      
+
       <div class="media-column">
         <div class="main-image-box">
           <img :src="articulo.image" :alt="articulo.title" class="display-img" />
@@ -43,7 +58,7 @@ const contactarPropietario = () => {
       </div>
 
       <div class="info-column">
-        
+
         <div class="header-info">
           <h1 class="item-title">{{ articulo.title }}</h1>
           <span class="status-badge">{{ articulo.status }}</span>
@@ -72,10 +87,10 @@ const contactarPropietario = () => {
 
         <div class="owner-card">
           <div class="owner-avatar">
-            {{ articulo.owner.name.charAt(0) }}
+            {{ ownerName.charAt(0).toUpperCase() }}
           </div>
           <div class="owner-details">
-            <h4>{{ articulo.owner.name }}</h4>
+            <h4>{{ ownerName }}</h4>
           </div>
         </div>
 
@@ -86,7 +101,6 @@ const contactarPropietario = () => {
         </div>
 
       </div>
-
     </div>
   </div>
 </template>
@@ -113,15 +127,13 @@ const contactarPropietario = () => {
   color: var(--brand-orange);
 }
 
-
 .product-columns-wrapper {
   display: grid;
-  grid-template-columns: 1.2fr 1fr; 
+  grid-template-columns: 1.2fr 1fr;
   gap: 40px;
   align-items: start;
 }
 
-/* --- ESTILOS COLUMNA IZQUIERDA --- */
 .media-column {
   width: 100%;
 }
@@ -142,7 +154,6 @@ const contactarPropietario = () => {
   object-fit: cover;
 }
 
-/* --- ESTILOS COLUMNA DERECHA --- */
 .info-column {
   display: flex;
   flex-direction: column;
@@ -291,13 +302,12 @@ const contactarPropietario = () => {
   background-color: var(--brand-red);
 }
 
-/* Responsivo básico si la pantalla se reduce */
 @media (max-width: 900px) {
   .product-columns-wrapper {
     grid-template-columns: 1fr;
     gap: 30px;
   }
-  
+
   .main-image-box {
     height: 350px;
   }
