@@ -133,19 +133,18 @@ const tipos = [
 
 const form = reactive({
   title: '',
-  price: '',
   description: '',
+  vendedor_id: 1, // Debe obtener el id del usuario
   categoria_id: null,
-  tags: [],
-  disponible: 1,
-  estadoLabel: '',
   trueque: 0,
-  tipoLabel: '',
+  disponible: 1,
+  price: '',
   image: '',
-  location: 'Playa del Carmen',
-  vendedor_id: 1  // reemplazar con id del usuario autenticado
+  /*tags: [],
+  estadoLabel: '',
+  tipoLabel: '',
+  location: 'Playa del Carmen',*/
 })
-
 const previewUrl = ref('')
 const isDragging = ref(false)
 const fileInput = ref(null)

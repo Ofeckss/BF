@@ -121,3 +121,6 @@ C:\Users\ediox\Documents\Tareas\Cuatrimestre 5\BF\back\obj\Debug\net9.0\back.pdb
 C:\Users\ediox\Documents\Tareas\Cuatrimestre 5\BF\back\obj\Debug\net9.0\back.genruntimeconfig.cache
 C:\Users\ediox\Documents\Tareas\Cuatrimestre 5\BF\back\obj\Debug\net9.0\ref\back.dll
 C:\Users\ediox\Documents\Tareas\Cuatrimestre 5\BF\back\obj\Debug\net9.0\swae.build.ex.cache
+C:\Users\ediox\Documents\Tareas\Cuatrimestre 5\BF\back\bin\Debug\net9.0\package-lock.json
+C:\Users\ediox\Documents\Tareas\Cuatrimestre 5\BF\back\bin\Debug\net9.0\CloudinaryDotNet.dll
+C:\Users\ediox\Documents\Tareas\Cuatrimestre 5\BF\back\bin\Debug\net9.0\Newtonsoft.Json.dll

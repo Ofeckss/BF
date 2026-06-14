@@ -105,15 +105,5 @@
     "C:\\Users\\ediox\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\9.0.17\\microsoft.aspnetcore.app.ref.9.0.17.nupkg.sha512",
     "C:\\Users\\ediox\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\9.0.17\\microsoft.netcore.app.host.win-x64.9.0.17.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "Undefined",
-      "level": "Warning",
-      "message": "Problem reading the cache file C:\\Users\\ediox\\Documents\\Tareas\\Cuatrimestre 5\\BF\\back\\obj\\project.nuget.cache : '<' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 2 | BytePositionInLine: 0.",
-      "projectPath": "C:\\Users\\ediox\\Documents\\Tareas\\Cuatrimestre 5\\BF\\back\\back.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\ediox\\Documents\\Tareas\\Cuatrimestre 5\\BF\\back\\back.csproj",
-      "targetGraphs": []
-    }
-  ]
+  "logs": []
 }
