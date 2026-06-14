@@ -10,4 +10,8 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<Usuario> Usuarios { get; set; } = null!;
+    public DbSet<Categoria> Categorias { get; set; } = null!;
+    public DbSet<Articulo> Articulos { get; set; } = null!;
+
+    public DbSet<Foto> Fotos { get; set;}
 }

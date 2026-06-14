@@ -1,4 +1,4 @@
-namespace back.Models;
+namespace back.DTOs;
 
 public record RegisterRequest(
     string Nombre,
