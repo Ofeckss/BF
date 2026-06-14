@@ -1,0 +1,28 @@
+# Build outputs
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# Dotnet user secrets folder is outside repo, but ignore any local secrets files
+appsettings.*.Local.json
+secrets.json
+
+# Node
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+
+# Misc
+*.db
+*.sqlite
+.env
