@@ -2,6 +2,7 @@ using BCrypt.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using back.Data;
+using back.DTOs;
 using back.Models;
 
 namespace back.Controllers;
@@ -18,7 +19,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<Usuario>> Register(RegisterRequest request)
+    public async Task<ActionResult<UsuarioResponse>> Register(RegisterRequest request)
     {
         if (await _db.Usuarios.AnyAsync(u => u.Correo == request.Correo))
         {
@@ -39,11 +40,16 @@ public class AuthController : ControllerBase
         _db.Usuarios.Add(usuario);
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(Register), new { id = usuario.Id }, usuario);
+        return CreatedAtAction(
+            nameof(UsuariosController.GetById),
+            "Usuarios",
+            new { id = usuario.Id },
+            usuario.ToResponse()
+        );
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<Usuario>> Login(LoginRequest request)
+    public async Task<ActionResult<UsuarioResponse>> Login(LoginRequest request)
     {
         var usuario = await _db.Usuarios.SingleOrDefaultAsync(u => u.Correo == request.Correo);
         if (usuario == null || !BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash))
@@ -51,6 +57,6 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Correo or password is invalid." });
         }
 
-        return Ok(usuario);
+        return Ok(usuario.ToResponse());
     }
 }

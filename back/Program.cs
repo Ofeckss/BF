@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using CloudinaryDotNet;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,14 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+var cloudinaryConfig = builder.Configuration.GetSection("Cloudinary");
+var account = new Account(
+    cloudinaryConfig["CloudName"],
+    cloudinaryConfig["ApiKey"],
+    cloudinaryConfig["ApiSecret"]
+);
+builder.Services.AddSingleton(new Cloudinary(account));
 
 app.UseHttpsRedirection();
 
