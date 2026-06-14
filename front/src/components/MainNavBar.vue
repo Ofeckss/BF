@@ -32,7 +32,7 @@
       <!-- Botón de Cuenta (Maneja el estado con Pinia) -->
       <button 
         v-if="!auth.isLoggedIn" 
-        @click="router.push('/opciones-login')"
+        @click="router.push('/login')"
         class="btn-nav-badge"
       >
         <div class="icon-circle account-lavender">
@@ -63,19 +63,17 @@ const auth = useAuthStore()
 </script>
 
 <style scoped>
-/* Contenedor principal de la barra con el color Cream original */
 .navbar-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #FFF6B2; /* Tu brand-cream exacto */
+  background-color: #FFF6B2;
   padding: 12px 30px;
-  border-bottom: 4px solid #594542; /* Tu brand-brown de borde */
+  border-bottom: 4px solid #594542;
 }
 
-/* Caja de texto BARTIFY estilo botón rígido */
 .logo-box {
-  background-color: #FA2700; /* Tu brand-orange */
+  background-color: #FA2700; 
   color: white;
   padding: 8px 20px;
   font-weight: 900;
@@ -86,7 +84,6 @@ const auth = useAuthStore()
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Contenedor e Inputs de la barra de búsqueda */
 .search-wrapper {
   display: flex;
   align-items: center;
@@ -100,7 +97,7 @@ const auth = useAuthStore()
 .search-input {
   flex: 1;
   border: none;
-  background-color: #FF6B52; /* Tono naranja claro interno para el campo */
+  background-color: #FF6B52; 
   padding: 8px 14px;
   border-radius: 6px;
   color: white;
@@ -132,14 +129,12 @@ const auth = useAuthStore()
   height: 22px;
 }
 
-/* Agrupación de botones derechos */
 .controls-group {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-/* Estructura de botones de control (Enviar / Cuenta) */
 .btn-nav-badge {
   background-color: #FA2700;
   border: none;
@@ -160,7 +155,6 @@ const auth = useAuthStore()
   transform: scale(1.04);
 }
 
-/* Círculos internos para los iconos */
 .icon-circle {
   width: 28px;
   height: 28px;
@@ -170,7 +164,6 @@ const auth = useAuthStore()
   justify-content: center;
 }
 
-/* Colores específicos de los círculos según tu mockup */
 .location-purple {
   background-color: #5E5CC6;
   color: white;
@@ -192,7 +185,6 @@ const auth = useAuthStore()
   font-weight: bold;
 }
 
-/* Contenedor de sesión de usuario autenticado */
 .sesion-activa-box {
   background-color: #FA2700;
   padding: 6px 12px;

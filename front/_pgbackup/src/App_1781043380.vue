@@ -1,14 +1,17 @@
-<template> 
-    <div class="app-layout"> 
-        <MainNavbar/> 
-        <main class="page-content"> 
-            <router-view/> 
-        </main>         
-    </div>     
-</template> 
+<template>
+  <div class="app-layout">
+    <MainNavbar />
+    
+    <main class="page-content">
+      <router-view />
+    </main>
+  </div>
+</template>
+
 <script setup>
 import MainNavbar from './components/MainNavbar.vue'
-</script> 
+</script>
+
 <style scoped>
 .app-layout {
   width: 100%;

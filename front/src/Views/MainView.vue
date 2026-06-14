@@ -1,56 +1,72 @@
-cd <template>
-  <div class="page-content">
+<template>
+  <div class="main-view-container">
     <HeroBanner />
     
+    <div class="main-actions-bar">
+      <div>
+        <h2>Artículos publicados</h2>
+        <p>Revisa los artículos disponibles y haz clic en cualquiera para ver los detalles.</p>
+      </div>
+      <button class="btn-new-product" @click="router.push('/nuevo-articulo')">
+        Publicar artículo
+      </button>
+    </div>
+
     <div class="products-grid">
-      <ProductCard 
-        :title="articuloUnico.title"
-        :location="articuloUnico.location"
-        :price="articuloUnico.price"
-        :status="articuloUnico.status"
-        :tags="articuloUnico.tags"
-        :image="articuloUnico.image"
-        @click="irAlDetalle"
+      <ProductCard
+        v-for="product in products"
+        :key="product.id"
+        :title="product.title"
+        :location="product.location"
+        :price="product.price"
+        :status="product.status"
+        :tags="product.tags"
+        :image="product.image"
         class="clickable-card"
+        @click="goToProduct(product.id)"
       />
+
+      <div v-if="products.length === 0" class="empty-state">
+        No hay artículos publicados todavía. Crea uno nuevo para verlo aquí.
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useProductosStore } from '../stores/productosStore'
 import HeroBanner from '../components/HeroBanner.vue'
 import ProductCard from '../components/ProductCard.vue'
 
 const router = useRouter()
+const productosStore = useProductosStore()
 
-const articuloUnico = ref({
-  title: 'MacBook Pro 2019',
-  location: 'Playa del Carmen',
-  price: 10900,
-  status: 'Buen Estado',
-  tags: ['Electrónicos', 'Cambio', 'Venta'],
-  image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=500&auto=format&fit=crop'
-})
+const products = computed(() => productosStore.products)
 
-const irAlDetalle = () => {
-  router.push('/articulo') // Te manda a la nueva vista del artículo
+const goToProduct = (productId) => {
+  router.push({ name: 'articulo', params: { id: productId } })
 }
 </script>
 
 <style scoped>
-.page-content {
-  padding: 40px 40px; 
-  max-width: 1440px; 
-  margin: 0 auto;
+.main-view-container {
+  padding-top: 20px;
+}
+
+.main-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
 .products-grid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
-  justify-content: flex-start;
-  margin-top: 20px;
 }
 
 .clickable-card {
@@ -61,5 +77,16 @@ const irAlDetalle = () => {
 .clickable-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 36px;
+  background: #fff7e4;
+  border: 3px dashed var(--brand-brown);
+  border-radius: 24px;
+  color: #6d4b32;
+  font-weight: bold;
+  text-align: center;
 }
 </style>
