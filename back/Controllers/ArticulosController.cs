@@ -82,24 +82,57 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ArticuloDto dto)
+    public async Task<IActionResult> Create()
     {
-        var articulo = new Articulo
+        using var reader = new System.IO.StreamReader(Request.Body);
+        var body = await reader.ReadToEndAsync();
+        try
         {
-            Nombre = dto.Nombre,
-            Descripcion = dto.Descripcion,
-            VendedorId = dto.VendedorId,
-            CategoriaId = dto.CategoriaId,
-            Precio = dto.Precio,
-            EsTrueque = dto.EsTrueque,
-            FechaPublicacion = dto.FechaPublicacion,
-            Disponible = true
-        };
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var dto = System.Text.Json.JsonSerializer.Deserialize<ArticuloDto>(body, options);
+            if (dto == null)
+                return BadRequest(new { error = "Request body could not be deserialized to ArticuloDto", body });
 
-        _db.Articulos.Add(articulo);
-        await _db.SaveChangesAsync();
+            DateOnly? fecha = null;
+            if (!string.IsNullOrWhiteSpace(dto.FechaPublicacion))
+            {
+                if (DateOnly.TryParse(dto.FechaPublicacion, out var parsed))
+                    fecha = parsed;
+            }
 
-        return CreatedAtAction(nameof(GetById), new {id = articulo.Id}, new {articulo.Id});
+            var articulo = new Articulo
+            {
+                Nombre = dto.Nombre,
+                Descripcion = dto.Descripcion,
+                VendedorId = dto.VendedorId,
+                CategoriaId = dto.CategoriaId,
+                Precio = dto.Precio,
+                EsTrueque = dto.Trueque != 0,
+                FechaPublicacion = fecha,
+                Ubicacion = string.IsNullOrWhiteSpace(dto.Ubicacion) ? "Playa del Carmen" : dto.Ubicacion,
+                Disponible = dto.Disponible != 0
+            };
+
+            _db.Articulos.Add(articulo);
+            await _db.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = articulo.Id }, new { articulo.Id });
+        }
+        catch (System.Text.Json.JsonException jex)
+        {
+            Console.WriteLine("JSON deserialization error: " + jex.Message);
+            Console.WriteLine("Request body: " + body);
+            return BadRequest(new { error = "Invalid JSON", details = jex.Message });
+        }
+        catch (System.Exception ex)
+        {
+            Console.WriteLine("Unhandled error in Create: " + ex.Message);
+            Console.WriteLine("Request body: " + body);
+            return BadRequest(new { error = "Could not process request", details = ex.Message });
+        }
     }
 
     [HttpPut("{id}")]
@@ -114,9 +147,14 @@ public class ArticulosController : ControllerBase
             articulo.Descripcion = dto.Descripcion;
             articulo.CategoriaId = dto.CategoriaId;
             articulo.Precio = dto.Precio;
-            articulo.EsTrueque = dto.EsTrueque;
-            articulo.Disponible = dto.Disponible;
-            articulo.FechaPublicacion = dto.FechaPublicacion;
+            articulo.EsTrueque = dto.Trueque != 0;
+            articulo.Ubicacion = string.IsNullOrWhiteSpace(dto.Ubicacion) ? articulo.Ubicacion : dto.Ubicacion;
+            articulo.Disponible = dto.Disponible != 0;
+
+            if (!string.IsNullOrWhiteSpace(dto.FechaPublicacion) && DateOnly.TryParse(dto.FechaPublicacion, out var parsedDate))
+            {
+                articulo.FechaPublicacion = parsedDate;
+            }
 
             await _db.SaveChangesAsync();
             return NoContent();

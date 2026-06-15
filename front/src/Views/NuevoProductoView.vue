@@ -3,7 +3,7 @@
     <h1 class="page-title">Publicar Producto</h1>
 
     <div class="layout">
-      <!-- Columna izquierda -->
+      
       <div class="left-col">
         <div class="form-group">
           <label>Titulo</label>
@@ -37,7 +37,7 @@
         </div>
 
         <div class="form-group">
-          <label>Estado Del producto</label>
+          <label>Estado Del Producto</label>
           <div class="chip-group">
             <button
               v-for="est in estados"
