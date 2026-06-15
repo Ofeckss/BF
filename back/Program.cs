@@ -27,7 +27,8 @@ var conn = builder.Configuration.GetConnectionString("Default")
 if (!string.IsNullOrEmpty(conn))
 {
     builder.Services.AddDbContext<back.Data.AppDbContext>(options =>
-        options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+        options.UseMySql(conn, ServerVersion.AutoDetect(conn), mysqlOptions =>
+            mysqlOptions.EnableRetryOnFailure()));
 }
 
 var cloudinaryConfig = builder.Configuration.GetSection("Cloudinary");
