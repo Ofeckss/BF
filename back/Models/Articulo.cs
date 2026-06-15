@@ -13,5 +13,5 @@ public class Articulo
     public bool Disponible {get; set;}
 
     public Categoria? Categoria {get; set;}
-    public ICollection<ArticuloFoto> Fotos    { get; set; } = new List<ArticuloFoto>();
+    public ICollection<Foto> Fotos    { get; set; } = new List<Foto>();
 }

@@ -93,7 +93,6 @@ export const useProductosStore = defineStore('productos', {
         ubicacion: form.location || 'Playa del Carmen',
         disponible: 1
       }
-
       try {
         const res = await productosApi.create(payload)
         const created = res?.data

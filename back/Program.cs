@@ -30,14 +30,6 @@ if (!string.IsNullOrEmpty(conn))
         options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
 }
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
 var cloudinaryConfig = builder.Configuration.GetSection("Cloudinary");
 var account = new Account(
     cloudinaryConfig["CloudName"],
@@ -45,6 +37,14 @@ var account = new Account(
     cloudinaryConfig["ApiSecret"]
 );
 builder.Services.AddSingleton(new Cloudinary(account));
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
 
 app.UseHttpsRedirection();
 
