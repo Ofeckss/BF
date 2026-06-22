@@ -11,13 +11,9 @@ export default {
     return conectarApi.post('/articulo', articulo)
   },
 
-  getFotosByArticulo(articuloId) {
+  /*getFotosByArticulo(articuloId) {
     return conectarApi.get(`/Fotos/articulo/${articuloId}`)
-  },
-  createFoto(foto) {
-    return conectarApi.post('/Fotos', foto)
-  },
-
+  },*/
   getCategorias() {
     return conectarApi.get('/categorias')
   }

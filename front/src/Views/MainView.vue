@@ -54,7 +54,6 @@ const goToProduct = (productId) => {
 .main-view-container {
   padding-top: 20px;
 }
-
 .main-actions-bar {
   display: flex;
   justify-content: space-between;
@@ -62,23 +61,19 @@ const goToProduct = (productId) => {
   gap: 20px;
   margin-bottom: 30px;
 }
-
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
 }
-
 .clickable-card {
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
 }
-
 .clickable-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
-
 .empty-state {
   grid-column: 1 / -1;
   padding: 36px;
