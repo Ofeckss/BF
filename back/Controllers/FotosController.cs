@@ -26,9 +26,6 @@ public class FotosController : ControllerBase
     {
         var articulo = await _db.Articulos.FindAsync(articuloId);
 
-        if(articuloId == null)
-            return NotFound(new {error = $"Producto con id {articuloId} no encontrado"});
-
         var extensionesPermitidas = new[] {".jpg", ".jpeg", ".png", ".webp"};
         var extension = Path.GetExtension(file.FileName).ToLower();
         if(!extensionesPermitidas.Contains(extension))
@@ -60,6 +57,41 @@ public class FotosController : ControllerBase
         await _db.SaveChangesAsync();
 
         return Ok(new { id = foto.Id, url = foto.Url, orden = foto.Orden});
+    }
+
+    [HttpGet("articulo/{articuloId}")]
+    public async Task<IActionResult> GetByArticulo(int articuloId)
+    {
+        var fotos = await _db.Fotos
+            .Where(f => f.ArticuloId == articuloId)
+            .OrderBy(f => f.Orden)
+            .Select(f => new { id = f.Id, articulo_id = f.ArticuloId, url = f.Url, orden = f.Orden })
+            .ToListAsync();
+
+        return Ok(fotos);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] FotoDto dto)
+    {
+        if (dto == null)
+            return BadRequest(new { error = "Request body is required" });
+
+        var orden = await _db.Fotos
+            .Where(f => f.ArticuloId == dto.ArticuloId)
+            .CountAsync();
+
+        var foto = new Foto
+        {
+            ArticuloId = dto.ArticuloId,
+            Url = dto.Url ?? string.Empty,
+            Orden = (byte)dto.Orden
+        };
+
+        _db.Fotos.Add(foto);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { id = foto.Id, url = foto.Url, orden = foto.Orden });
     }
 
     /*

@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProductosStore } from '../stores/productosStore'
 import HeroBanner from '../components/HeroBanner.vue'
@@ -48,6 +48,10 @@ const products = computed(() => productosStore.products)
 const goToProduct = (productId) => {
   router.push({ name: 'articulo', params: { id: productId } })
 }
+
+onMounted(() => {
+  productosStore.fetchFromServer()
+})
 </script>
 
 <style scoped>
@@ -83,5 +87,18 @@ const goToProduct = (productId) => {
   color: #6d4b32;
   font-weight: bold;
   text-align: center;
+}
+
+.btn-new-product {
+  background: var(--brand-orange);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: auto;
+  transition: opacity 0.2s;
 }
 </style>
