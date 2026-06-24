@@ -16,12 +16,10 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddRepositories(
-        builder.Configuration.GetConnectionString("mysql")!
-    );
-}
+
+builder.Services.AddRepositories(
+    builder.Configuration.GetConnectionString("mysql")!
+);
 
 builder.Services
        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -44,11 +42,15 @@ builder.Services
 builder.Services.AddCors(options => {
     options.AddPolicy("BartifyPolicy", policy => {
         policy.SetIsOriginAllowed(origin => {
-            
             var uri = new Uri(origin);
             
+            // Local
             if (uri.Host == "localhost" || uri.Host == "127.0.0.1") 
                 return true;
+            
+            // Producción
+            if (uri.Host.EndsWith(".up.railway.app")) return true;
+            if (uri.Host.EndsWith(".vercel.app")) return true;
             
             return false;
         });
@@ -66,6 +68,9 @@ builder.Services.Configure<FormOptions>(options =>
     options.ValueCountLimit = int.MaxValue;
     options.MultipartBodyLengthLimit = long.MaxValue;
 });
+
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
 
