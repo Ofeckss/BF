@@ -35,8 +35,3 @@ dotnet user-secrets init
 [EL COMANDO QUE YO LES PASÉ]
 dotnet run
 ```
-
-
-## Commits
-
-Ofeck - Se terminó el setup del backend y se hicieron los endpoints de login y register
