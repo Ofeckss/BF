@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Ofeck.Bartify.DB")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ccfb11e04d1b9429cf928974d59896076abb3909")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+39de9218376fa3afbd2746bf8936840a2563a97d")]
 [assembly: System.Reflection.AssemblyProductAttribute("Ofeck.Bartify.DB")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Ofeck.Bartify.DB")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
