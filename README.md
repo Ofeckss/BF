@@ -72,11 +72,11 @@ GET: API_URL/api/{id}
 
 **Categorías principales**
 
-POST: API_URL/api/categorias
+GET: API_URL/api/categorias
 
 **Buscar subcategorías por categoría principal**
 
-POST: API_URL/api/categorias/{id}
+GET: API_URL/api/categorias/{id}
 
 Estos regresan un array de objetos `{id: 0, nombre: 0, padre_id: 0}`
 
