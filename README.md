@@ -35,3 +35,136 @@ dotnet user-secrets init
 [EL COMANDO QUE YO LES PASÉ]
 dotnet run
 ```
+
+## APIS
+
+API_URL = http://localhost:5246
+
+# Usuarios
+
+**Registro**
+
+POST: API_URL/api/register
+```
+Params:
+{
+  "nombre": "string",
+  "email": "string",
+  "password": "string"
+}
+```
+**Login**
+
+POST: API_URL/api/login (Regresa un token(string))
+```
+Params:
+{
+  "email": "string",
+  "password": "string"
+}
+```
+**Get usuario por id**
+
+GET: API_URL/api/{id}
+
+
+# Categorias
+
+**Categorías principales**
+
+POST: API_URL/api/categorias
+
+**Buscar subcategorías por categoría principal**
+
+POST: API_URL/api/categorias/{id}
+
+Estos regresan un array de objetos `{id: 0, nombre: 0, padre_id: 0}`
+
+
+# Estados (Nuevo, semi nuevo, etc)
+
+**GetAll**
+
+GET: API_URL/api/estados
+
+
+# Ubicaciones (Nombres de ciudades)
+
+**GetAll**
+
+GET: API_URL/api/ubicaciones
+
+Estos 2 /\ regresan un array de objetos `{id: 0, nombre: 0}`
+
+
+# Articulos
+
+**Crear artículo (Regresa el id del articulo, se tiene que usar para mandar las fotos separadamente)**
+
+POST API_URL/api/articulos
+```
+Params:
+{
+  "nombre": "string",
+  "descripcion": "string",
+  "precio": 0.1,
+  "categoriaId": 0,
+  "esTrueque": true,
+  "estadoId": 0,
+  "ubicacionId": 0
+}
+```
+**GetAll (Regresa todos los articulos con su foto principal)**
+
+GET API_URL/api/articulos
+
+**GetByUsuario (Todos los articulos con su foto principal de un usuario)**
+
+GET API_URL/api/articulos/usuario/{id}
+```
+{
+Respuesta de GetByUsuario y GetAll
+    "id": "019ef831-a042-7f7a-9b7d-5e49399efefb",
+    "nombre": "1234",
+    "descripcion": "1234",
+    "precio": 1234,
+    "esTrueque": false,
+    "disponible": true,
+    "url": null,
+    "ubicacion": {
+      "id": 2,
+      "nombre": "Cancun"
+    },
+    "createdAt": "2026-06-24T00:54:22",
+    "categoria": {
+      "id": 1,
+      "nombre": "Electrónicos"
+    },
+    "vendedor": {
+      "vendedorId": "019ef7d2-a449-7b17-9226-16204d157d4f",
+      "nombre": "Ofeck",
+      "apellido": null
+    }
+```
+**GetById (Regresa el articulo sin fotos, hay que fetch las fotos por separado)**
+
+GET API_URL/api/articulos/{id}
+
+
+# Fotos
+
+**Subir una foto**
+
+POST API_URL/api/fotos
+```
+{
+"files": array<string>
+"articuloId": string($uuid)
+}
+```
+**Conseguir un array de ulrs de Cloudinary**
+
+GET API_URL/api/fotos/{articuloId} 
+
+## **TODAS LAS IDS (Expecto las de categorias, ubicaciones y estados) SON UIDS, SIEMPRE USEN STRINGS CON UNA UID**
+
