@@ -36,7 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('user', JSON.stringify(userData))
       return true
     } catch (error) {
-      console.error("Error al loguear:", error)
+      console.error("Error al iniciar sesión: ", error)
       throw error
     } finally {
       isLoading.value = false
