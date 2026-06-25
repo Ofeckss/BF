@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import conectarApi from '../services/api'
 
 export const useAuthStore = defineStore('auth', () => {
+
   const savedUser = localStorage.getItem('user')
   //const savedToken = localStorage.getItem('token')
   
@@ -18,7 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await conectarApi.post('/api/usuarios/register', {
         Nombre: name,
-        Correo: email,
+        Email: email,
         Password: password,
       })
     } finally {
@@ -34,15 +35,16 @@ export const useAuthStore = defineStore('auth', () => {
         password: password,
       })
 
-      //const receivedToken = response.data.token
-
+      console.log('Respuesta del backend:', response.data)
+      
       const userData = {
-        email: response.data.correo,
+        email: response.data.correo, 
         name: response.data.nombre,
         id: response.data.id
       }
 
       user.value = userData
+      //console.log(user.value)
       //token.value = receivedToken
 
       localStorage.setItem('user', JSON.stringify(userData))

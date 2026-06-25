@@ -45,7 +45,7 @@
 
       <!-- Vista cuando la sesión está activa -->
       <div v-else class="sesion-activa-box">
-        <span class="user-email-text">{{ auth.userEmail }}</span>
+        <span class="user-email-text">{{ auth.user.name }}</span>
         <button @click="auth.logout" class="btn-salir-nav">Salir</button>
       </div>
 

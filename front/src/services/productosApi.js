@@ -15,5 +15,27 @@ export default {
   },
   getCategorias() {
     return conectarApi.get('/api/categorias')
+  },
+  getSubCategoria(id){
+    return conectarApi.get(`/api/categorias/${id}`)
+  },
+  getFotosByArticulo(articuloId){
+    return conectarApi.get(`/api/fotos/${articuloId}`)
+  },
+  createFoto(files, articuloId){
+    const formData = new FormData()
+    for (const file of files) {
+      formData.append('files', file)
+    }
+    formData.append('/articuloId', articuloId)
+    return conectarApi.post('/api/fotos', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  getEstados() {
+    return conectarApi.get('/api/estados')
+  },
+  getUbicaciones() {
+    return conectarApi.get('/api/ubicaciones')
   }
 }

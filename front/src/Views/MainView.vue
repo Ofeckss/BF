@@ -17,7 +17,7 @@
         v-for="product in products"
         :key="product.id"
         :title="product.title"
-        :location="product.location"
+        :location="product.ubicacion"
         :price="product.price"
         :status="product.status"
         :tags="product.tags"
