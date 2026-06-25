@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   const registerUser = async (name, email, password) => {
     isLoading.value = true
     try {
-      await conectarApi.post('/api/register', {
+      await conectarApi.post('/api/usuarios/register', {
         Nombre: name,
         Correo: email,
         Password: password,
@@ -29,9 +29,9 @@ export const useAuthStore = defineStore('auth', () => {
   const loginUser = async (email, password) => {
     isLoading.value = true
     try {
-      const response = await conectarApi.post('/api/login', {
-        Correo: email,
-        Password: password,
+      const response = await conectarApi.post('/api/usuarios/login', {
+        email: email,
+        password: password,
       })
 
       //const receivedToken = response.data.token
