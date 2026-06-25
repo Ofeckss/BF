@@ -1,36 +1,29 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ofeck\\Codes\\BF\\back\\back.csproj": {}
+    "C:\\Integradora\\bf\\back\\back.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ofeck\\Codes\\BF\\back\\back.csproj": {
+    "C:\\Integradora\\bf\\back\\back.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ofeck\\Codes\\BF\\back\\back.csproj",
+        "projectUniqueName": "C:\\Integradora\\bf\\back\\back.csproj",
         "projectName": "back",
-        "projectPath": "C:\\Users\\ofeck\\Codes\\BF\\back\\back.csproj",
-        "packagesPath": "C:\\Users\\ofeck\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ofeck\\Codes\\BF\\back\\obj\\",
+        "projectPath": "C:\\Integradora\\bf\\back\\back.csproj",
+        "packagesPath": "C:\\Users\\testi\\.nuget\\packages\\",
+        "outputPath": "C:\\Integradora\\bf\\back\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\ofeck\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\testi\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net9.0": {
-            "framework": "net9.0",
             "targetAlias": "net9.0",
             "projectReferences": {}
           }
@@ -45,11 +38,10 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.300"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net9.0": {
-          "framework": "net9.0",
           "targetAlias": "net9.0",
           "dependencies": {
             "BCrypt.Net-Next": {
@@ -98,7 +90,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.315/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
