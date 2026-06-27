@@ -148,7 +148,7 @@ const ubicaciones = ref([])
 const form = reactive({
   title: '',
   description: '',
-  vendedor_id: authStore.user?.id || null,
+  vendedor_id: authStore.user?.id ?? null,
   categoria_id: null,
   estadoId: null,
   ubicacionId: null,
@@ -169,10 +169,10 @@ onMounted(async () => {
   try {
     const [estadosRes, ubicacionesRes] = await Promise.all([
       productosApi.getEstados(),
-      productosApi.getUbicaciones(),
-      estados.value = estadosRes.data,
-      ubicaciones.value = ubicacionesRes.data
+      productosApi.getUbicaciones()
     ])
+    estados.value = estadosRes.data
+    ubicaciones.value = ubicacionesRes.data
   } catch (err) {
     console.warn('No se pudieron cargar estados o ubicaciones', err)
   }

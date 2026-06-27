@@ -5,8 +5,11 @@ import NuevoProductoView from '../Views/NuevoProductoView.vue'
 import userApi from '../components/userApi.vue'
 import AuthLogin from '../components/auth/AuthLogin.vue'
 import AuthRegistro from '../components/auth/AuthRegistro.vue'
+import PerfilView from '../Views/PerfilView.vue'
+import HistorialView from '../Views/HistorialView.vue'
+import MisArticulosView from '../Views/MisArticulosView.vue'
+import AjustesView from '../Views/AjustesView.vue'
 import { useAuthStore } from '../stores/authStore.js'
-
 
 const routes = [
   { path: '/', name: 'main', component: MainView },
@@ -14,7 +17,11 @@ const routes = [
   { path: '/nuevo-articulo', name: 'nuevo-articulo', component: NuevoProductoView, meta: { requiresAuth: true } },
   { path: '/users', name: 'users', component: userApi },
   { path: '/login', name: 'login', component: AuthLogin },
-  { path: '/registro', name: 'registro', component: AuthRegistro }
+  { path: '/registro', name: 'registro', component: AuthRegistro },
+  { path: '/perfil', name: 'perfil', component: PerfilView, meta: { requiresAuth: true } },
+  { path: '/historial', name: 'historial', component: HistorialView, meta: { requiresAuth: true } },
+  { path: '/mis-articulos', name: 'mis-articulos', component: MisArticulosView, meta: { requiresAuth: true } },
+  { path: '/ajustes', name: 'ajustes', component: AjustesView, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({
