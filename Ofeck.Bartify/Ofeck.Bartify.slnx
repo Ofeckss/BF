@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="Ofeck.Bartify.APIEndpoints/Ofeck.Bartify.APIEndpoints.csproj" />
-  <Project Path="Ofeck.Bartify.Core/Ofeck.Bartify.Core.csproj" />
-  <Project Path="Ofeck.Bartify.DB/Ofeck.Bartify.DB.csproj" />
-</Solution>
