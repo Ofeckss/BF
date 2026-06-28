@@ -9,4 +9,17 @@ const conectarApi = axios.create({
     }
 })
 
+conectarApi.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 400) {
+            import('../stores/authStore').then(({ useAuthStore }) => {
+                const auth = useAuthStore()
+                auth.logout()
+            })
+        }
+        return Promise.reject(error)
+    }
+)
+
 export default conectarApi;
