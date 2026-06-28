@@ -30,7 +30,8 @@ onMounted(async () => {
       conectarApi.get(`/api/articulos/${id}`),
       productosApi.getFotosByArticulo(id)
     ])
-    articulo.value = articuloRes.date
+    
+    articulo.value = articuloRes.data
     imageUrl.value = fotoRes.data?.[0]?.url || ''
   } catch (err) {
     console.warn('No se puede cargar el articulo: ', err)
