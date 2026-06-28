@@ -34,9 +34,11 @@ onMounted(async () => {
       conectarApi.get(`/api/articulos/${id}`),
       productosApi.getFotosByArticulo(id)
     ])
+    //console.log('Datos del articulo:', articuloRes.data)
     
     articulo.value = articuloRes.data
     imageUrl.value = fotoRes.data?.[0]?.url || ''
+    
 
     // Registrar en historial si hay sesión
     if (auth.isLoggedIn && articulo.value) {
@@ -60,9 +62,9 @@ onMounted(async () => {
 })
 
 const ownerName = () => {
-  const v = articulo.value?.Vendedor
+  const v = articulo.value?.vendedor
   if (!v) return 'Desconocido'
-  return `${v.Nombre} ${v.Apellido}`.trim()
+  return `${v.nombre} ${v.apellido}`.trim()
 }
 
 const regresar = () => router.push('/')
@@ -110,32 +112,32 @@ const iniciarCompra = () => {}
       <div class="info-column">
 
         <div class="header-info">
-          <h1 class="item-title">{{ articulo.Nombre }}</h1>
-          <span class="status-badge">{{ articulo.Disponible ? 'Disponible' : 'No disponible' }}</span>
+          <h1 class="item-title">{{ articulo.nombre }}</h1>
+          <span class="status-badge">{{ articulo.disponible ? 'Disponible' : 'No disponible' }}</span>
         </div>
 
         <div class="location-box">
           <span class="pin-icon">📍</span>
-          <span class="location-text">{{ articulo.Ubicacion?.Nombre || '-' }}</span>
+          <span class="location-text">{{ articulo.ubicacion?.nombre || '-' }}</span>
         </div>
 
         <div class="price-box">
           <span class="price-label">Precio estimado:</span>
-          <h2 class="price-value">${{ articulo.Precio.toLocaleString('es-MX') }} MXN</h2>
+          <h2 class="price-value">${{ articulo.precio?.toLocaleString('es-MX') ?? 0 }} MXN</h2>
         </div>
 
         <div class="tags-row">
-          <span v-if="articulo.Categoria?.Nombre" class="tag-pill">
-            {{ articulo.Categoria.Nombre }}
+          <span v-if="articulo.categoria?.nombre" class="tag-pill">
+            {{ articulo.categoria.nombre }}
           </span>
-          <span v-if="articulo.EsTrueque" class="tag-pill trueque">
+          <span v-if="articulo.esTrueque" class="tag-pill trueque">
             Acepta trueque
           </span>
         </div>
 
         <div class="description-card">
           <h3>Descripción del artículo</h3>
-          <p>{{ articulo.Descripcion }}</p>
+          <p>{{ articulo.descripcion }}</p>
         </div>
 
         <div class="owner-card">
@@ -148,7 +150,7 @@ const iniciarCompra = () => {}
         </div>
 
         <!-- Botones disponible -->
-        <div v-if="articulo.Disponible" class="action-buttons-stack">
+        <div v-if="articulo.disponible" class="action-buttons-stack">
           <button @click="proponerTrueque" class="btn-trueque">
             🔄 Proponer trueque
           </button>

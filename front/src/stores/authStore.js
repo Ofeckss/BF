@@ -38,7 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
       console.log('Respuesta del backend:', response.data)
       
       const userData = {
-        email: response.data.correo, 
+        email: response.data.email, 
         name: response.data.nombre,
         id: response.data.id
       }
