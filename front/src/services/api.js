@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../stores/authStore';
 
 const conectarApi = axios.create({
     baseURL: 'https://ofeckbartify-production.up.railway.app',
@@ -13,10 +14,8 @@ conectarApi.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 400) {
-            import('../stores/authStore').then(({ useAuthStore }) => {
-                const auth = useAuthStore()
-                auth.logout()
-            })
+            const auth = useAuthStore()
+            auth.logout()
         }
         return Promise.reject(error)
     }
