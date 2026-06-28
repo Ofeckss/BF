@@ -79,55 +79,36 @@ export const useProductosStore = defineStore('productos', () => {
     }
   }
  
-  const addProduct = async (form) => {
-    const now = new Date().toISOString()
-    const payload = {
-      Id: crypto.randomUUID(),
-      Nombre: form.title,
-      Descripcion: form.description,
-      VendedorId: form.vendedor_id,
-      CategoriaId: form.categoria_id,
-      Precio: Number(form.price),
-      EsTrueque: form.esTrueque ?? false,
-      EstadoId: form.estadoId,
-      UbicacionId: form.ubicacionId,
-      Disponible: true,
-      CreatedAt: now,
-      UpdatedAt: now
-    }
- 
-    const res = await productosApi.create(payload)
-    const created = res?.data
- 
-    let imageUrl = ''
-    if (created?.id && form.imageFiles?.length) {
+const addProduct = async (form) => {
+  const payload = {
+    Nombre: form.title,
+    Descripcion: form.description,
+    Precio: Number(form.price),
+    CategoriaId: form.categoria_id,
+    EsTrueque: Boolean(form.esTrueque) ?? false,
+    EstadoId: form.estadoId,
+    UbicacionId: form.ubicacionId,
+  }
+
+  let res
+  try {
+    res = await productosApi.create(payload)
+
+    if (res?.data?.id && form.imageFiles?.length) {
       try {
-        const fotoRes = await productosApi.createFoto(form.imageFiles, created.id)
-        imageUrl = fotoRes?.data?.[0]?.url || ''
+        await productosApi.createFoto(form.imageFiles, res.data.id)
       } catch (fotoErr) {
         console.warn('Foto no se pudo guardar:', fotoErr)
       }
     }
- 
-    const newProduct = {
-      id: String(created?.id || Date.now()),
-      title: form.title,
-      description: form.description,
-      price: Number(form.price),
-      location: form.location,
-      status: 'Disponible',
-      esTrueque: form.esTrueque ?? false,
-      categoria_id: form.categoria_id,
-      vendedor_id: form.vendedor_id,
-      tags: [],
-      image: imageUrl,
-      owner: form.ownerName || 'Anónimo',
-      fecha_publicacion: new Date().toISOString().slice(0, 10)
-    }
- 
-    products.value.unshift(newProduct)
-    return newProduct
+  } catch (err) {
+    console.log('Error completo:', err.response?.data)
+    throw err
   }
+
+  await fetchFromServer()
+  return res.data
+}
  
   return {
     products,
