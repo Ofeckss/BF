@@ -44,7 +44,7 @@ API_URL = http://localhost:5246
 
 **Registro**
 
-POST: API_URL/api/register
+POST: API_URL/api/usuarios/register
 ```
 Params:
 {
@@ -55,7 +55,7 @@ Params:
 ```
 **Login**
 
-POST: API_URL/api/login (Regresa un token(string))
+POST: API_URL/api/usuarios/login (Regresa un token(string))
 ```
 Params:
 {
@@ -65,18 +65,18 @@ Params:
 ```
 **Get usuario por id**
 
-GET: API_URL/api/{id}
+GET: API_URL/api/usuarios/{id}
 
 
 # Categorias
 
 **Categorías principales**
 
-POST: API_URL/api/categorias
+GET: API_URL/api/categorias
 
 **Buscar subcategorías por categoría principal**
 
-POST: API_URL/api/categorias/{id}
+GET: API_URL/api/categorias/{id}
 
 Estos regresan un array de objetos `{id: 0, nombre: 0, padre_id: 0}`
 

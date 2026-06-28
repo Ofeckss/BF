@@ -80,16 +80,20 @@ export const useProductosStore = defineStore('productos', () => {
   }
  
   const addProduct = async (form) => {
+    const now = new Date().toISOString()
     const payload = {
+      Id: crypto.randomUUID(),
       Nombre: form.title,
       Descripcion: form.description,
       VendedorId: form.vendedor_id,
       CategoriaId: form.categoria_id,
       Precio: Number(form.price),
-      EsTrueque: form.trueque,
-      EstadoId: form.estadoId1,
+      EsTrueque: form.esTrueque ?? false,
+      EstadoId: form.estadoId,
       UbicacionId: form.ubicacionId,
-      disponible: true
+      Disponible: true,
+      CreatedAt: now,
+      UpdatedAt: now
     }
  
     const res = await productosApi.create(payload)
@@ -112,7 +116,7 @@ export const useProductosStore = defineStore('productos', () => {
       price: Number(form.price),
       location: form.location,
       status: 'Disponible',
-      trueque: form.trueque,
+      esTrueque: form.esTrueque ?? false,
       categoria_id: form.categoria_id,
       vendedor_id: form.vendedor_id,
       tags: [],
