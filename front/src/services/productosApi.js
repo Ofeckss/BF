@@ -27,7 +27,7 @@ export default {
     for (const file of files) {
       formData.append('files', file)
     }
-    formData.append(articuloId)
+    formData.append('articuloId', articuloId)
     return conectarApi.post('/api/fotos', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
