@@ -1,18 +1,24 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import conectarApi from '../services/api'
+import { connectSendbird, disconnectSendbird } from '../services/sendbirdClient'
 
 export const useAuthStore = defineStore('auth', () => {
+
   const savedUser = localStorage.getItem('user')
+
   const user = ref(savedUser ? JSON.parse(savedUser) : null)
   const isLoading = ref(false)
+
+  const isLoggedIn = computed(() => !!user.value)
+  const userEmail = computed(() => user.value?.email || '')
 
   const registerUser = async (name, email, password) => {
     isLoading.value = true
     try {
-      await conectarApi.post('/auth/register', {
+      await conectarApi.post('/api/usuarios/register', {
         Nombre: name,
-        Correo: email,
+        Email: email,
         Password: password,
       })
     } finally {
@@ -23,20 +29,25 @@ export const useAuthStore = defineStore('auth', () => {
   const loginUser = async (email, password) => {
     isLoading.value = true
     try {
-      const response = await conectarApi.post('/auth/login', {
-        Correo: email,
-        Password: password,
+      const response = await conectarApi.post('/api/usuarios/login', {
+        email: email,
+        password: password,
       })
+
       const userData = {
-        email: response.data.correo,
-        name: response.data.nombre,
-        id: response.data.id
+        id: response.data.id,
+        email: response.data.email,
+        name: response.data.nombre
       }
+
       user.value = userData
       localStorage.setItem('user', JSON.stringify(userData))
+
+      await connectSendbird(userData.id, userData.name)
+
       return true
     } catch (error) {
-      console.error("Error al loguear:", error)
+      console.error("Error al iniciar sesión: ", error)
       throw error
     } finally {
       isLoading.value = false
@@ -44,9 +55,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = () => {
+    disconnectSendbird()
     user.value = null
     localStorage.removeItem('user')
   }
 
-  return { user, isLoading, registerUser, loginUser, logout }
+  return { user, isLoading, isLoggedIn, userEmail, registerUser, loginUser, logout }
 })

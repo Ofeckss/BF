@@ -1,45 +1,92 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useProductosStore } from '../stores/productosStore'
+import conectarApi from '../services/api'
+import productosApi from '../services/productosApi'
+import { useAuthStore } from '../stores/authStore'
+import { useHistorialStore } from '../stores/historialStore'
+import { useChatStore } from '../stores/chatStore'
 
 const router = useRouter()
 const route = useRoute()
-const productosStore = useProductosStore()
+const auth = useAuthStore()
+const historialStore = useHistorialStore()
+const chatStore = useChatStore()
 
-const productId = computed(() => route.params.id)
+const articulo = ref(null)
+const imageUrl = ref('')
+const loading = ref(true)
+const error = ref('')
 
-const fallbackArticulo = {
-  title: 'Artículo no encontrado',
-  location: '—',
-  price: 0,
-  status: 'No disponible',
-  description: 'No se encontró el artículo solicitado.',
-  tags: [],
-  image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600&auto=format&fit=crop',
-  owner: 'Desconocido'
+const fallback = {
+  Nombre: 'Articulo no encontrado',
+  Descripcion: 'No se encontró el articulo solicitado.',
+  Precio: 0,
+  Disponible: false,
+  EsTrueque: false,
+  Ubicacion: { Nombre: '-' },
+  Categoria: { Nombre: '-' },
+  Vendedor: { Nombre: 'Desconocido', Apellido: '' }
 }
 
-const articulo = computed(() => {
-  const found = productosStore.getProductById(productId.value)
-  return found ? found : fallbackArticulo
+onMounted(async () => {
+  const id = route.params.id
+  try {
+    const [articuloRes, fotoRes] = await Promise.all([
+      conectarApi.get(`/api/articulos/${id}`),
+      productosApi.getFotosByArticulo(id)
+    ])
+
+    articulo.value = articuloRes.data
+    imageUrl.value = fotoRes.data?.[0]?.url || ''
+
+    if (auth.isLoggedIn && articulo.value) {
+      historialStore.registrarVisita({
+        id: String(id),
+        title: articulo.value.Nombre,
+        price: articulo.value.Precio,
+        location: articulo.value.Ubicacion?.Nombre || '',
+        status: articulo.value.Disponible ? 'Disponible' : 'No disponible',
+        tags: articulo.value.Categoria?.Nombre ? [articulo.value.Categoria.Nombre] : [],
+        image: fotoRes.data?.[0]?.url || ''
+      }, auth.user.id)
+    }
+  } catch (err) {
+    console.warn('No se puede cargar el articulo: ', err)
+    articulo.value = fallback
+    error.value = 'No se pudo cargar el articulo.'
+  } finally {
+    loading.value = false
+  }
 })
 
-const ownerName = computed(() => {
-  const o = articulo.value.owner
-  if (!o) return 'Desconocido'
-  if (typeof o === 'string') return o
-  return o.name || 'Desconocido'
-})
-
-const regresar = () => {
-  router.push('/')
+const ownerName = () => {
+  const v = articulo.value?.vendedor
+  if (!v) return 'Desconocido'
+  return `${v.nombre} ${v.apellido || ''}`.trim()
 }
 
-const contactarPropietario = () => {
-  if (articulo.value.title === fallbackArticulo.title) return
-  alert(`Abriendo chat con ${ownerName.value} para negociar el artículo: ${articulo.value.title}`)
+const regresar = () => router.push('/')
+
+const proponerTrueque = async () => {
+  if (!articulo.value || articulo.value === fallback) return
+
+  console.log('articulo completo:', articulo.value)
+  console.log('vendedor:', articulo.value.vendedor)
+  console.log('vendedorId:', articulo.value.vendedor?.vendedorId)
+
+  await chatStore.openChannelForArticulo({
+    articuloId: route.params.id,
+    vendedorId: articulo.value.vendedor?.vendedorId,
+    articuloNombre: articulo.value.nombre,
+    imagenUrl: imageUrl.value,
+    sellerNickname: ownerName()
+  })
+
+  router.push('/chat')
 }
+
+const iniciarCompra = () => {}
 </script>
 
 <template>
@@ -49,54 +96,73 @@ const contactarPropietario = () => {
       ← Volver al inicio
     </button>
 
-    <div class="product-columns-wrapper">
+    <div v-if="loading" class="loading-state">
+      Cargando artículo...
+    </div>
 
+    <div v-else-if="articulo" class="product-columns-wrapper">
       <div class="media-column">
         <div class="main-image-box">
-          <img :src="articulo.image" :alt="articulo.title" class="display-img" />
+          <img 
+            :src="imageUrl || 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600&auto=format&fit=crop'" 
+            :alt="articulo.Nombre" 
+            class="display-img" 
+          />
         </div>
       </div>
 
       <div class="info-column">
 
         <div class="header-info">
-          <h1 class="item-title">{{ articulo.title }}</h1>
-          <span class="status-badge">{{ articulo.status }}</span>
+          <h1 class="item-title">{{ articulo.nombre }}</h1>
+          <span class="status-badge">{{ articulo.disponible ? 'Disponible' : 'No disponible' }}</span>
         </div>
 
         <div class="location-box">
           <span class="pin-icon">📍</span>
-          <span class="location-text">{{ articulo.location }}</span>
+          <span class="location-text">{{ articulo.ubicacion?.nombre || '-' }}</span>
         </div>
 
         <div class="price-box">
           <span class="price-label">Precio estimado:</span>
-          <h2 class="price-value">${{ articulo.price.toLocaleString('es-MX') }}</h2>
+          <h2 class="price-value">${{ articulo.precio?.toLocaleString('es-MX') ?? 0 }} MXN</h2>
         </div>
 
         <div class="tags-row">
-          <span v-for="(tag, index) in articulo.tags" :key="index" class="tag-pill">
-            {{ tag }}
+          <span v-if="articulo.categoria?.nombre" class="tag-pill">
+            {{ articulo.categoria.nombre }}
+          </span>
+          <span v-if="articulo.esTrueque" class="tag-pill trueque">
+            Acepta trueque
           </span>
         </div>
 
         <div class="description-card">
-          <h3>Descripción del Artículo</h3>
-          <p>{{ articulo.description }}</p>
+          <h3>Descripción del artículo</h3>
+          <p>{{ articulo.descripcion }}</p>
         </div>
 
         <div class="owner-card">
           <div class="owner-avatar">
-            {{ ownerName.charAt(0).toUpperCase() }}
+            {{ ownerName().charAt(0).toUpperCase() }}
           </div>
           <div class="owner-details">
-            <h4>{{ ownerName }}</h4>
+            <h4>{{ ownerName() }}</h4>
           </div>
         </div>
 
-        <div class="action-buttons-stack">
-          <button @click="contactarPropietario" class="btn-primary-action">
-            Proponer Trueque / Comprar
+        <div v-if="articulo.disponible" class="action-buttons-stack">
+          <button @click="proponerTrueque" class="btn-trueque">
+            🔄 Proponer trueque
+          </button>
+          <button @click="iniciarCompra" class="btn-compra">
+            💳 Comprar
+          </button>
+        </div>
+
+        <div v-else class="action-buttons-stack">
+          <button disabled class="btn-primary-action-disabled">
+            No disponible
           </button>
         </div>
 
@@ -110,6 +176,8 @@ const contactarPropietario = () => {
   margin-top: 30px;
   margin-bottom: 50px;
   width: 100%;
+  padding: 0 40px;
+  box-sizing: border-box;
 }
 
 .btn-back {
@@ -123,8 +191,13 @@ const contactarPropietario = () => {
   transition: color 0.2s;
 }
 
-.btn-back:hover {
-  color: var(--brand-orange);
+.btn-back:hover { color: var(--brand-orange); }
+
+.loading-state {
+  text-align: center;
+  padding: 60px;
+  color: var(--brand-dark-gray);
+  font-size: 1.1rem;
 }
 
 .product-columns-wrapper {
@@ -134,9 +207,7 @@ const contactarPropietario = () => {
   align-items: start;
 }
 
-.media-column {
-  width: 100%;
-}
+.media-column { width: 100%; }
 
 .main-image-box {
   width: 100%;
@@ -227,6 +298,12 @@ const contactarPropietario = () => {
   font-size: 0.9rem;
 }
 
+.tag-pill.trueque {
+  background-color: var(--brand-cream);
+  color: var(--brand-orange);
+  border: 1.5px solid var(--brand-orange);
+}
+
 .description-card {
   background-color: #FFFFFF;
   border: 2px solid #EFEFEF;
@@ -274,42 +351,65 @@ const contactarPropietario = () => {
   color: #000000;
 }
 
-.owner-details p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #666666;
-}
-
 .action-buttons-stack {
   margin-top: 10px;
+  display: flex;
+  gap: 12px;
 }
 
-.btn-primary-action {
+.btn-trueque {
+  flex: 1;
   background-color: var(--brand-orange);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 16px;
+  padding: 18px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(250, 39, 0, 0.3);
+  transition: background-color 0.2s;
+}
+
+.btn-trueque:hover { background-color: var(--brand-red); }
+
+.btn-compra {
+  flex: 1;
+  background-color: white;
+  color: var(--brand-orange);
+  border: 2.5px solid var(--brand-orange);
+  border-radius: 16px;
+  padding: 18px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-compra:hover {
+  background-color: var(--brand-orange);
+  color: white;
+}
+
+.btn-primary-action-disabled {
+  background-color: var(--brand-dark-gray);
   color: #FFFFFF;
   border: none;
   border-radius: 16px;
   padding: 18px;
   font-size: 1.2rem;
   font-weight: bold;
-  cursor: pointer;
   width: 100%;
-  box-shadow: 0 4px 14px rgba(250, 39, 0, 0.3);
-  transition: background-color 0.2s, transform 0.1s;
-}
-
-.btn-primary-action:hover {
-  background-color: var(--brand-red);
+  box-shadow: 0 4px 14px rgba(70, 11, 1, 0.3);
 }
 
 @media (max-width: 900px) {
+  .product-detail-container { padding: 0 20px; }
   .product-columns-wrapper {
     grid-template-columns: 1fr;
     gap: 30px;
   }
-
-  .main-image-box {
-    height: 350px;
-  }
+  .main-image-box { height: 350px; }
+  .action-buttons-stack { flex-direction: column; }
 }
 </style>

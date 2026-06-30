@@ -3,7 +3,6 @@
     <h1 class="page-title">Publicar Producto</h1>
 
     <div class="layout">
-      
       <div class="left-col">
         <div class="form-group">
           <label>Titulo</label>
@@ -29,7 +28,7 @@
               type="button"
               class="chip"
               :class="{ active: form.categoria_id === cat.id }"
-              @click="form.categoria_id = cat.id; form.tags = [cat.nombre]"
+              @click="form.categoria_id = cat.id"
             >
               {{ cat.nombre }}
             </button>
@@ -41,13 +40,29 @@
           <div class="chip-group">
             <button
               v-for="est in estados"
-              :key="est.label"
+              :key="est.id"
               type="button"
               class="chip"
-              :class="{ active: form.disponible === est.value && form.estadoLabel === est.label }"
-              @click="form.disponible = est.value; form.estadoLabel = est.label"
+              :class="{ active: form.estadoId  === est.id }"
+              @click="form.estadoId = est.id"
             >
-              {{ est.label }}
+              {{ est.nombre }}
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Ubicación</label>
+          <div class="chip-group">
+            <button
+            v-for="ub in ubicaciones"
+            :key="ub.id"
+            type="button"
+            class="chip"
+            :class="{ active: form.ubicacionId === ub.id}"
+            @click="form.ubicacionId = ub.id"
+            >
+              {{ ub.nombre }}
             </button>
           </div>
         </div>
@@ -61,7 +76,7 @@
               type="button"
               class="chip"
               :class="{ active: form.tipoLabel === tipo.label }"
-              @click="form.trueque = tipo.value; form.tipoLabel = tipo.label"
+              @click="form.esTrueque = tipo.value; form.tipoLabel = tipo.label"
             >
               {{ tipo.label }}
             </button>
@@ -114,16 +129,12 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProductosStore } from '../stores/productosStore'
+import { useAuthStore } from '../stores/authStore'
+import productosApi from '../services/productosApi'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const productosStore = useProductosStore()
-
-const estados = [
-  { label: 'Nuevo',       value: 1 },
-  { label: 'Como Nuevo',  value: 1 },
-  { label: 'Buen Estado', value: 1 },
-  { label: 'Mal Estado',  value: 0 }
-]
 
 const tipos = [
   { label: 'Venta',  value: 0 },
@@ -131,28 +142,40 @@ const tipos = [
   { label: 'Ambos',  value: 1 }
 ]
 
+const estados = ref([])
+const ubicaciones = ref([])
+
 const form = reactive({
   title: '',
   description: '',
-  vendedor_id: 1, // Debe obtener el id del usuario
+  vendedor_id: authStore.user?.id ?? null,
   categoria_id: null,
-  trueque: 0,
-  disponible: 1,
-  price: '',
-  image: '',
-  /*tags: [],
-  estadoLabel: '',
+  estadoId: null,
+  ubicacionId: null,
+  esTrueque: false,
   tipoLabel: '',
-  location: 'Playa del Carmen',*/
+  price: '',
 })
+
 const previewUrl = ref('')
+const selectedFile = ref(null)
 const isDragging = ref(false)
 const fileInput = ref(null)
 const loading = ref(false)
 const error = ref('')
 
-onMounted(() => {
-  productosStore.fetchCategorias()
+onMounted(async () => {
+  await productosStore.fetchCategorias()
+  try {
+    const [estadosRes, ubicacionesRes] = await Promise.all([
+      productosApi.getEstados(),
+      productosApi.getUbicaciones()
+    ])
+    estados.value = estadosRes.data
+    ubicaciones.value = ubicacionesRes.data
+  } catch (err) {
+    console.warn('No se pudieron cargar estados o ubicaciones', err)
+  }
 })
 
 const triggerFileInput = () => fileInput.value?.click()
@@ -169,10 +192,10 @@ const handleDrop = (e) => {
 }
 
 const loadPreview = (file) => {
+  selectedFile.value = file
   const reader = new FileReader()
   reader.onload = (e) => {
     previewUrl.value = e.target.result
-    form.image = e.target.result
   }
   reader.readAsDataURL(file)
 }
@@ -180,11 +203,17 @@ const loadPreview = (file) => {
 const handleSubmit = async () => {
   error.value = ''
   if (!form.title.trim()) { error.value = 'El título es obligatorio.'; return }
-  if (!form.price)         { error.value = 'El precio es obligatorio.'; return }
+  if (!form.price) { error.value = 'El precio es obligatorio.'; return }
+  if (!form.categoria_id) { error.value = 'Selecciona una categoría'; return }
+  if (!form.estadoId) { error.value = 'Selecciona un estado para el producto'; return }
+  if (!form.ubicacionId) { error.value = 'Selecciona una ubicación'; return }
 
   loading.value = true
   try {
-    await productosStore.addProduct({ ...form })
+    await productosStore.addProduct({
+       ...form,
+       imageFiles: selectedFile.value ? [selectedFile.value] : []
+      })
     router.push('/')
   } catch (err) {
     error.value = 'No se pudo publicar el artículo.'
