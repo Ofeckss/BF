@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import conectarApi from '../services/api'
-import { useChatStore } from './chatStore'
+import { connectSendbird, disconnectSendbird } from '../services/sendbirdClient'
 
 export const useAuthStore = defineStore('auth', () => {
 
@@ -34,19 +34,16 @@ export const useAuthStore = defineStore('auth', () => {
         password: password,
       })
 
-      console.log('Respuesta del backend:', response.data)
-
       const userData = {
+        id: response.data.id,
         email: response.data.email,
-        name: response.data.nombre,
-        id: response.data.id
+        name: response.data.nombre
       }
 
       user.value = userData
       localStorage.setItem('user', JSON.stringify(userData))
 
-      const chatStore = useChatStore()
-      await chatStore.initUser(userData.id, userData.name)
+      await connectSendbird(userData.id, userData.name)
 
       return true
     } catch (error) {
@@ -58,6 +55,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = () => {
+    disconnectSendbird()
     user.value = null
     localStorage.removeItem('user')
   }

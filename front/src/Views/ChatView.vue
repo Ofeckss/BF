@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
 import ChatCard from '../components/ChatCard.vue'
@@ -115,6 +115,7 @@ const chatActivo = ref(null)
 const mensajes = ref([])
 const nuevoMensaje = ref('')
 const messagesRef = ref(null)
+let pollingInterval = null
 
 onMounted(async () => {
   await chatStore.loadChannels(auth.user.id)
@@ -142,21 +143,36 @@ onMounted(async () => {
   }
 })
 
-const abrirChat = async (chat) => {
-  chatActivo.value = chat
-  chatStore.setActiveChannel(chat)
-  mensajes.value = []
+onUnmounted(() => {
+  if (pollingInterval) clearInterval(pollingInterval)
+})
 
-  const rawMensajes = await sendbirdApi.getMessages(chat.channelUrl)
+const cargarMensajes = async (channelUrl) => {
+  const rawMensajes = await sendbirdApi.getMessages(channelUrl)
   mensajes.value = rawMensajes.map(m => ({
     id: m.message_id,
     texto: m.message,
     esMio: cleanId(m.user?.user_id) === cleanId(auth.user.id),
     hora: new Date(m.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
   }))
-
   await nextTick()
   if (messagesRef.value) messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+}
+
+const abrirChat = async (chat) => {
+  if (pollingInterval) clearInterval(pollingInterval)
+
+  chatActivo.value = chat
+  chatStore.setActiveChannel(chat)
+  mensajes.value = []
+
+  await cargarMensajes(chat.channelUrl)
+
+  pollingInterval = setInterval(() => {
+    if (chatActivo.value?.channelUrl === chat.channelUrl) {
+      cargarMensajes(chat.channelUrl)
+    }
+  }, 4000)
 }
 
 const cleanId = (id) => String(id).replace('@', '_at_').replace(/\./g, '_')
@@ -165,21 +181,9 @@ const enviarMensaje = async () => {
   const texto = nuevoMensaje.value.trim()
   if (!texto || !chatActivo.value) return
 
-  const msg = {
-    id: Date.now(),
-    texto,
-    esMio: true,
-    hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
-  }
-  mensajes.value.push(msg)
-  chatActivo.value.ultimoMensaje = texto
-  chatActivo.value.hora = msg.hora
   nuevoMensaje.value = ''
-
-  await nextTick()
-  if (messagesRef.value) messagesRef.value.scrollTop = messagesRef.value.scrollHeight
-
   await sendbirdApi.sendMessage(chatActivo.value.channelUrl, auth.user.id, texto)
+  await cargarMensajes(chatActivo.value.channelUrl)
 }
 </script>
 

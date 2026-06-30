@@ -40,9 +40,6 @@ onMounted(async () => {
     articulo.value = articuloRes.data
     imageUrl.value = fotoRes.data?.[0]?.url || ''
 
-    console.log('Vendedor data:', articulo.value.vendedor)
-    console.log('Articulo completo:', articulo.value)
-
     if (auth.isLoggedIn && articulo.value) {
       historialStore.registrarVisita({
         id: String(id),
@@ -74,13 +71,15 @@ const regresar = () => router.push('/')
 const proponerTrueque = async () => {
   if (!articulo.value || articulo.value === fallback) return
 
+  console.log('articulo completo:', articulo.value)
+  console.log('vendedor:', articulo.value.vendedor)
+  console.log('vendedorId:', articulo.value.vendedor?.vendedorId)
+
   await chatStore.openChannelForArticulo({
     articuloId: route.params.id,
+    vendedorId: articulo.value.vendedor?.vendedorId,
     articuloNombre: articulo.value.nombre,
     imagenUrl: imageUrl.value,
-    buyerId: auth.user.id,
-    buyerNickname: auth.user.name,
-    sellerId: articulo.value.vendedor?.VendedorId,
     sellerNickname: ownerName()
   })
 
