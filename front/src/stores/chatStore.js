@@ -27,7 +27,7 @@ export const useChatStore = defineStore('chat', () => {
   // Crea (o recupera) el chat para un artículo via backend
   async function openChannelForArticulo({ articuloId, vendedorId, articuloNombre, imagenUrl, sellerNickname }) {
     const res = await chatApi.create(articuloId, vendedorId, articuloNombre)
-    const channelUrl = res.data // el backend regresa la url del chat directamente
+    const channelUrl = res.data.url // el backend regresa { url, mensaje }
 
     activeChannelUrl.value = channelUrl
     activeChannel.value = { articuloNombre, imagen: imagenUrl, vendedorNombre: sellerNickname }

@@ -138,7 +138,6 @@ const productosStore = useProductosStore()
 
 const tipos = [
   { label: 'Venta',  value: 0 },
-  { label: 'Cambio', value: 1 },
   { label: 'Ambos',  value: 1 }
 ]
 
