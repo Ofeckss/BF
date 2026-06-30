@@ -1,7 +1,6 @@
 <template>
   <div class="chat-page">
 
-    <!-- Sidebar: lista de chats -->
     <aside class="chat-sidebar">
       <div class="sidebar-header">
         <h2>Mensajes</h2>
@@ -27,10 +26,8 @@
       </div>
     </aside>
 
-    <!-- Panel: mensajes -->
     <main class="chat-panel">
 
-      <!-- Sin chat seleccionado -->
       <div v-if="!chatActivo" class="panel-empty">
         <svg viewBox="0 0 24 24" fill="none" width="56" height="56">
           <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="currentColor"/>
@@ -38,9 +35,7 @@
         <p>Selecciona una conversación para empezar</p>
       </div>
 
-      <!-- Chat activo -->
       <template v-else>
-        <!-- Header del chat -->
         <div class="panel-header">
           <div class="panel-header-info">
             <div class="panel-img-wrap">
@@ -61,7 +56,6 @@
           </div>
         </div>
 
-        <!-- Mensajes -->
         <div class="messages-area" ref="messagesRef">
           <div v-if="mensajes.length === 0" class="messages-empty">
             <p>Inicia la conversación sobre <strong>{{ chatActivo.articuloNombre }}</strong></p>
@@ -76,7 +70,6 @@
           </div>
         </div>
 
-        <!-- Input -->
         <div class="input-area">
           <button class="btn-attach" title="Adjuntar">
             <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
@@ -109,12 +102,13 @@
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
+import { useChatStore } from '../stores/chatStore'
 import ChatCard from '../components/ChatCard.vue'
+import * as sendbirdApi from '../services/sendbirdApi'
 
-const route = useRoute()
 const auth = useAuthStore()
+const chatStore = useChatStore()
 
 const chats = ref([])
 const chatActivo = ref(null)
@@ -122,45 +116,55 @@ const mensajes = ref([])
 const nuevoMensaje = ref('')
 const messagesRef = ref(null)
 
-onMounted(() => {
-  // Si viene desde ArticuloView con query params, abrir ese chat directamente
-  const { articuloId, articuloNombre, articuloImg, vendedorNombre, vendedorId } = route.query
+onMounted(async () => {
+  await chatStore.loadChannels(auth.user.id)
+  chats.value = chatStore.channels
 
-  if (articuloId) {
-    // Buscar si ya existe un chat con este artículo
-    const existente = chats.value.find(c => c.articuloId === articuloId)
-    if (existente) {
-      abrirChat(existente)
+  if (chatStore.activeChannelUrl) {
+    const canal = chats.value.find(c => c.channelUrl === chatStore.activeChannelUrl)
+    if (canal) {
+      await abrirChat(canal)
     } else {
-      // Crear nueva entrada en la lista
+      const meta = chatStore.activeChannel
       const nuevo = {
-        id: `chat-${articuloId}`,
-        articuloId,
-        articuloNombre: articuloNombre || 'Artículo',
-        vendedorNombre: vendedorNombre || '',
-        vendedorId: vendedorId || '',
-        imagen: articuloImg || '',
+        id: chatStore.activeChannelUrl,
+        channelUrl: chatStore.activeChannelUrl,
+        articuloNombre: meta?.articuloNombre || 'Artículo',
+        vendedorNombre: meta?.vendedorNombre || '',
+        imagen: meta?.imagen || '',
         ultimoMensaje: '',
         hora: '',
         unread: 0
       }
       chats.value.unshift(nuevo)
-      abrirChat(nuevo)
+      await abrirChat(nuevo)
     }
   }
 })
 
-const abrirChat = (chat) => {
+const abrirChat = async (chat) => {
   chatActivo.value = chat
-  // TODO: cargar mensajes reales de Sendbird por chat.id
+  chatStore.setActiveChannel(chat)
   mensajes.value = []
+
+  const rawMensajes = await sendbirdApi.getMessages(chat.channelUrl)
+  mensajes.value = rawMensajes.map(m => ({
+    id: m.message_id,
+    texto: m.message,
+    esMio: cleanId(m.user?.user_id) === cleanId(auth.user.id),
+    hora: new Date(m.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+  }))
+
+  await nextTick()
+  if (messagesRef.value) messagesRef.value.scrollTop = messagesRef.value.scrollHeight
 }
+
+const cleanId = (id) => String(id).replace('@', '_at_').replace(/\./g, '_')
 
 const enviarMensaje = async () => {
   const texto = nuevoMensaje.value.trim()
   if (!texto || !chatActivo.value) return
 
-  // TODO: enviar por Sendbird
   const msg = {
     id: Date.now(),
     texto,
@@ -168,16 +172,14 @@ const enviarMensaje = async () => {
     hora: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
   }
   mensajes.value.push(msg)
-
-  // Actualizar último mensaje en la card
   chatActivo.value.ultimoMensaje = texto
   chatActivo.value.hora = msg.hora
-
   nuevoMensaje.value = ''
+
   await nextTick()
-  if (messagesRef.value) {
-    messagesRef.value.scrollTop = messagesRef.value.scrollHeight
-  }
+  if (messagesRef.value) messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+
+  await sendbirdApi.sendMessage(chatActivo.value.channelUrl, auth.user.id, texto)
 }
 </script>
 
@@ -189,7 +191,6 @@ const enviarMensaje = async () => {
   overflow: hidden;
 }
 
-/* Sidebar */
 .chat-sidebar {
   width: 300px;
   flex-shrink: 0;
@@ -228,7 +229,6 @@ const enviarMensaje = async () => {
   text-align: center;
 }
 
-/* Panel */
 .chat-panel {
   flex: 1;
   display: flex;
@@ -248,7 +248,6 @@ const enviarMensaje = async () => {
 
 .panel-empty p { font-size: 0.95rem; color: #bbb; margin: 0; }
 
-/* Header del panel */
 .panel-header {
   display: flex;
   align-items: center;
@@ -314,7 +313,6 @@ const enviarMensaje = async () => {
 
 .btn-finalizar:hover { background-color: #d92100; }
 
-/* Mensajes */
 .messages-area {
   flex: 1;
   overflow-y: auto;
@@ -379,7 +377,6 @@ const enviarMensaje = async () => {
   border-bottom-left-radius: 4px;
 }
 
-/* Input */
 .input-area {
   display: flex;
   align-items: center;

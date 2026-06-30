@@ -114,7 +114,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   position: relative;
 }
 
-/* Reutiliza los estilos del navbar */
 .btn-nav-badge {
   background-color: #FA2700;
   border: none;

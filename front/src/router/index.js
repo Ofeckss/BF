@@ -9,6 +9,7 @@ import PerfilView from '../Views/PerfilView.vue'
 import HistorialView from '../Views/HistorialView.vue'
 import MisArticulosView from '../Views/MisArticulosView.vue'
 import AjustesView from '../Views/AjustesView.vue'
+import ChatView from '../Views/ChatView.vue'
 import { useAuthStore } from '../stores/authStore.js'
 
 const routes = [
@@ -22,6 +23,8 @@ const routes = [
   { path: '/historial', name: 'historial', component: HistorialView, meta: { requiresAuth: true } },
   { path: '/mis-articulos', name: 'mis-articulos', component: MisArticulosView, meta: { requiresAuth: true } },
   { path: '/ajustes', name: 'ajustes', component: AjustesView, meta: { requiresAuth: true } },
+  { path: '/chat', name: 'chat', component: ChatView, meta: { requiresAuth: true } },
+  { path: '/mensajes', redirect: '/chat' },
 ]
 
 const router = createRouter({

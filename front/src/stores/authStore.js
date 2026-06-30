@@ -1,18 +1,17 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import conectarApi from '../services/api'
+import { useChatStore } from './chatStore'
 
 export const useAuthStore = defineStore('auth', () => {
 
   const savedUser = localStorage.getItem('user')
-  //const savedToken = localStorage.getItem('token')
-  
+
   const user = ref(savedUser ? JSON.parse(savedUser) : null)
-  //const token = ref(savedToken || null)
   const isLoading = ref(false)
 
-  const isLoggedIn = computed(()=> !!user.value)
-  const userEmail = computed(()=> user.value?.email || '')
+  const isLoggedIn = computed(() => !!user.value)
+  const userEmail = computed(() => user.value?.email || '')
 
   const registerUser = async (name, email, password) => {
     isLoading.value = true
@@ -36,19 +35,18 @@ export const useAuthStore = defineStore('auth', () => {
       })
 
       console.log('Respuesta del backend:', response.data)
-      
+
       const userData = {
-        email: response.data.email, 
+        email: response.data.email,
         name: response.data.nombre,
         id: response.data.id
       }
 
       user.value = userData
-      //console.log(user.value)
-      //token.value = receivedToken
-
       localStorage.setItem('user', JSON.stringify(userData))
-      //localStorage.setItem('token', receivedToken)
+
+      const chatStore = useChatStore()
+      await chatStore.initUser(userData.id, userData.name)
 
       return true
     } catch (error) {
@@ -61,9 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = () => {
     user.value = null
-    //token.value = null
     localStorage.removeItem('user')
-    //localStorage.removeItem('token')
   }
 
   return { user, isLoading, isLoggedIn, userEmail, registerUser, loginUser, logout }

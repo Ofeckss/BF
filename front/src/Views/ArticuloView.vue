@@ -5,11 +5,13 @@ import conectarApi from '../services/api'
 import productosApi from '../services/productosApi'
 import { useAuthStore } from '../stores/authStore'
 import { useHistorialStore } from '../stores/historialStore'
+import { useChatStore } from '../stores/chatStore'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const historialStore = useHistorialStore()
+const chatStore = useChatStore()
 
 const articulo = ref(null)
 const imageUrl = ref('')
@@ -34,13 +36,13 @@ onMounted(async () => {
       conectarApi.get(`/api/articulos/${id}`),
       productosApi.getFotosByArticulo(id)
     ])
-    //console.log('Datos del articulo:', articuloRes.data)
-    
+
     articulo.value = articuloRes.data
     imageUrl.value = fotoRes.data?.[0]?.url || ''
-    
 
-    // Registrar en historial si hay sesión
+    console.log('Vendedor data:', articulo.value.vendedor)
+    console.log('Articulo completo:', articulo.value)
+
     if (auth.isLoggedIn && articulo.value) {
       historialStore.registrarVisita({
         id: String(id),
@@ -64,26 +66,27 @@ onMounted(async () => {
 const ownerName = () => {
   const v = articulo.value?.vendedor
   if (!v) return 'Desconocido'
-  return `${v.nombre} ${v.apellido}`.trim()
+  return `${v.nombre} ${v.apellido || ''}`.trim()
 }
 
 const regresar = () => router.push('/')
 
-const proponerTrueque = () => {
+const proponerTrueque = async () => {
   if (!articulo.value || articulo.value === fallback) return
-  router.push({
-    path: '/chat',
-    query: {
-      articuloId: route.params.id,
-      articuloNombre: articulo.value.Nombre,
-      articuloImg: imageUrl.value,
-      vendedorNombre: ownerName(),
-      vendedorId: articulo.value.Vendedor?.Id || ''
-    }
+
+  await chatStore.openChannelForArticulo({
+    articuloId: route.params.id,
+    articuloNombre: articulo.value.nombre,
+    imagenUrl: imageUrl.value,
+    buyerId: auth.user.id,
+    buyerNickname: auth.user.name,
+    sellerId: articulo.value.vendedor?.VendedorId,
+    sellerNickname: ownerName()
   })
+
+  router.push('/chat')
 }
 
-/* boton compra — pendiente implementar */
 const iniciarCompra = () => {}
 </script>
 
@@ -149,7 +152,6 @@ const iniciarCompra = () => {}
           </div>
         </div>
 
-        <!-- Botones disponible -->
         <div v-if="articulo.disponible" class="action-buttons-stack">
           <button @click="proponerTrueque" class="btn-trueque">
             🔄 Proponer trueque
@@ -159,7 +161,6 @@ const iniciarCompra = () => {}
           </button>
         </div>
 
-        <!-- No disponible -->
         <div v-else class="action-buttons-stack">
           <button disabled class="btn-primary-action-disabled">
             No disponible
