@@ -16,15 +16,22 @@ export async function getMessages(channelUrl) {
   return data.messages || []
 }
 
-export async function sendMessage(channelUrl, userId, message) {
+export async function sendMessage(channelUrl, userId, message, opts = {}) {
+  const body = {
+    message_type: 'MESG',
+    user_id: String(userId),
+    message
+  }
+  // opts.customType + opts.data permiten mandar mensajes "estructurados"
+  // (ej. ofertas de artículo) que el front puede reconocer y pintar como
+  // card en vez de burbuja de texto plano.
+  if (opts.customType) body.custom_type = opts.customType
+  if (opts.data) body.data = JSON.stringify(opts.data)
+
   const res = await fetch(`${BASE}/group_channels/${channelUrl}/messages`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      message_type: 'MESG',
-      user_id: String(userId),
-      message
-    })
+    body: JSON.stringify(body)
   })
   return await res.json()
 }

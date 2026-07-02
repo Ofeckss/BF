@@ -6,7 +6,14 @@
         <h2>Mensajes</h2>
       </div>
 
-      <div v-if="chats.length === 0" class="sidebar-empty">
+      <div v-if="chatStore.loading" class="sidebar-empty">
+        Cargando conversaciones...
+      </div>
+      <div v-else-if="chatStore.loadError" class="sidebar-empty sidebar-error">
+        {{ chatStore.loadError }}
+        <button class="btn-reintentar" @click="recargarChats">Reintentar</button>
+      </div>
+      <div v-else-if="chats.length === 0" class="sidebar-empty">
         No tienes conversaciones aún.
       </div>
 
@@ -52,7 +59,14 @@
             </div>
           </div>
           <div class="panel-header-actions">
-            <button class="btn-finalizar">Finalizar trato</button>
+            <button
+              class="btn-finalizar"
+              :disabled="!chatActivo.chatId"
+              :title="!chatActivo.chatId ? 'Espera un momento, el chat se está sincronizando...' : ''"
+              @click="mostrarModalFinalizar = true"
+            >
+              Finalizar trato
+            </button>
           </div>
         </div>
 
@@ -65,17 +79,59 @@
             :key="msg.id"
             :class="['msg-bubble', msg.esMio ? 'msg-mio' : 'msg-otro']"
           >
-            <p>{{ msg.texto }}</p>
+            <div v-if="msg.esOferta" class="oferta-card">
+              <img v-if="msg.oferta.url" :src="msg.oferta.url" class="oferta-card-thumb" />
+              <div v-else class="oferta-card-thumb placeholder"></div>
+              <div class="oferta-card-body">
+                <span class="oferta-card-label">{{ msg.esMio ? 'Ofreciste' : 'Te ofreció' }}</span>
+                <span class="oferta-card-nombre">{{ msg.oferta.nombre }}</span>
+              </div>
+            </div>
+            <p v-else>{{ msg.texto }}</p>
             <span class="msg-hora">{{ msg.hora }}</span>
           </div>
         </div>
 
         <div class="input-area">
-          <button class="btn-attach" title="Adjuntar">
-            <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-              <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" fill="currentColor"/>
-            </svg>
-          </button>
+          <div class="attach-wrap">
+            <button
+              class="btn-attach"
+              title="Ofrecer un artículo"
+              :disabled="!chatActivo.chatId"
+              @click="abrirSelectorArticulo"
+            >
+              <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+                <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z" fill="currentColor"/>
+              </svg>
+            </button>
+
+            <div v-if="mostrarSelectorArticulo" class="attach-popover" @click.self="mostrarSelectorArticulo = false">
+              <div class="attach-panel">
+                <p class="attach-title">Ofrecer un artículo</p>
+
+                <div v-if="cargandoOferta" class="attach-estado">Cargando tus artículos...</div>
+                <div v-else-if="errorOferta" class="attach-estado attach-error">{{ errorOferta }}</div>
+                <div v-else-if="misArticulosOferta.length === 0" class="attach-estado">
+                  No tienes artículos disponibles para ofrecer.
+                </div>
+
+                <div v-else class="attach-list">
+                  <button
+                    v-for="art in misArticulosOferta"
+                    :key="art.id"
+                    class="attach-item"
+                    :disabled="enviandoOferta === art.id"
+                    @click="enviarArticuloAlChat(art)"
+                  >
+                    <img v-if="art.url" :src="art.url" class="attach-thumb" />
+                    <div v-else class="attach-thumb placeholder"></div>
+                    <span class="attach-nombre">{{ art.nombre }}</span>
+                    <span v-if="enviandoOferta === art.id" class="attach-enviando">Enviando...</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
           <button class="btn-emoji" title="Emoji">
             <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
               <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" fill="currentColor"/>
@@ -97,6 +153,13 @@
       </template>
 
     </main>
+
+    <TradeConfirmModal
+      v-if="mostrarModalFinalizar && chatActivo?.chatId"
+      :chat-id="chatActivo.chatId"
+      :articulo-id="chatActivo.articuloId"
+      @close="mostrarModalFinalizar = false"
+    />
   </div>
 </template>
 
@@ -105,7 +168,10 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
 import ChatCard from '../components/ChatCard.vue'
+import TradeConfirmModal from '../components/TradeConfirmModal.vue'
 import * as sendbirdApi from '../services/sendbirdApi'
+import transaccionesApi from '../services/transaccionesApi'
+import productosApi from '../services/productosApi'
 
 const auth = useAuthStore()
 const chatStore = useChatStore()
@@ -115,9 +181,18 @@ const chatActivo = ref(null)
 const mensajes = ref([])
 const nuevoMensaje = ref('')
 const messagesRef = ref(null)
+const mostrarModalFinalizar = ref(false)
 let pollingInterval = null
 
-onMounted(async () => {
+// --- Ofrecer un artículo en el chat ---
+const mostrarSelectorArticulo = ref(false)
+const misArticulosOferta = ref([])
+const cargandoOferta = ref(false)
+const errorOferta = ref('')
+const enviandoOferta = ref(null) // id del articulo que se está enviando
+const idsYaOfrecidos = ref(new Set()) // ids de MIS artículos ya ofrecidos en este chat
+
+async function inicializarChats() {
   await chatStore.loadChannels(auth.user.id)
   chats.value = chatStore.channels
 
@@ -129,6 +204,8 @@ onMounted(async () => {
       const meta = chatStore.activeChannel
       const nuevo = {
         id: chatStore.activeChannelUrl,
+        chatId: meta?.chatId || null,
+        articuloId: meta?.articuloId || null,
         channelUrl: chatStore.activeChannelUrl,
         articuloNombre: meta?.articuloNombre || 'Artículo',
         vendedorNombre: meta?.vendedorNombre || '',
@@ -141,32 +218,88 @@ onMounted(async () => {
       await abrirChat(nuevo)
     }
   }
-})
+}
+
+const recargarChats = () => inicializarChats()
+
+onMounted(inicializarChats)
 
 onUnmounted(() => {
   if (pollingInterval) clearInterval(pollingInterval)
 })
 
 const cargarMensajes = async (channelUrl) => {
+  if (!auth.user?.id) {
+    console.warn('[cargarMensajes] auth.user aún no está listo, se aborta esta carga')
+    return
+  }
+
   const rawMensajes = await sendbirdApi.getMessages(channelUrl)
-  mensajes.value = rawMensajes.map(m => ({
-    id: m.message_id,
-    texto: m.message,
-    esMio: cleanId(m.user?.user_id) === cleanId(auth.user.id),
-    hora: new Date(m.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
-  }))
+  mensajes.value = rawMensajes.map(m => {
+    const esOferta = m.custom_type === 'oferta_articulo'
+    let oferta = null
+    if (esOferta && m.data) {
+      try { oferta = JSON.parse(m.data) } catch (e) { oferta = null }
+    }
+    return {
+      id: m.message_id,
+      texto: m.message,
+      esOferta: esOferta && !!oferta,
+      oferta,
+      esMio: cleanId(m.user?.user_id) === cleanId(auth.user?.id),
+      hora: new Date(m.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+    }
+  })
   await nextTick()
   if (messagesRef.value) messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+}
+
+// Resuelve el chatId real cuando el chat se abrió como "provisional"
+// (chat recién creado y chatStore todavía no lo sincronizó con chatId).
+async function resolverChatIdReal(chat, intentos = 5, delayMs = 800) {
+  if (chat.chatId) {
+    console.log('[resolverChatIdReal] ya tenía chatId:', chat.chatId)
+    return chat.chatId
+  }
+
+  for (let i = 0; i < intentos; i++) {
+    await new Promise(res => setTimeout(res, delayMs))
+    await chatStore.loadChannels(auth.user.id)
+    chats.value = chatStore.channels
+
+    const match = chats.value.find(c => c.channelUrl === chat.channelUrl)
+    console.log(`[resolverChatIdReal] intento ${i + 1}/${intentos}:`, match?.chatId || 'sin match aún')
+    if (match?.chatId) {
+      chat.chatId = match.chatId
+      if (chatActivo.value?.channelUrl === chat.channelUrl) {
+        chatActivo.value.chatId = match.chatId
+      }
+      return match.chatId
+    }
+  }
+
+  console.warn('[resolverChatIdReal] no se pudo resolver el chatId tras', intentos, 'intentos')
+  return null
 }
 
 const abrirChat = async (chat) => {
   if (pollingInterval) clearInterval(pollingInterval)
 
   chatActivo.value = chat
+  console.log('[abrirChat] chat recibido:', chat)
+  console.log('[abrirChat] chatId:', chat.chatId, '| channelUrl:', chat.channelUrl)
+
   chatStore.setActiveChannel(chat)
   mensajes.value = []
+  mostrarModalFinalizar.value = false
+  mostrarSelectorArticulo.value = false
+  idsYaOfrecidos.value = new Set()
 
   await cargarMensajes(chat.channelUrl)
+
+  if (!chat.chatId) {
+    resolverChatIdReal(chat)
+  }
 
   pollingInterval = setInterval(() => {
     if (chatActivo.value?.channelUrl === chat.channelUrl) {
@@ -180,10 +313,139 @@ const cleanId = (id) => String(id).replace('@', '_at_').replace(/\./g, '_')
 const enviarMensaje = async () => {
   const texto = nuevoMensaje.value.trim()
   if (!texto || !chatActivo.value) return
-
   nuevoMensaje.value = ''
   await sendbirdApi.sendMessage(chatActivo.value.channelUrl, auth.user.id, texto)
   await cargarMensajes(chatActivo.value.channelUrl)
+}
+
+// Determina qué de MIS artículos ya fueron ofrecidos en esta transacción,
+// para no dejar mandarlos otra vez.
+async function obtenerIdsYaOfrecidos() {
+  try {
+    const [artRes, detRes] = await Promise.all([
+      productosApi.getById(chatActivo.value.articuloId),
+      transaccionesApi.getDetalles(chatActivo.value.chatId)
+    ])
+    const vendedorId = artRes.data?.vendedorId || artRes.data?.vendedor?.vendedorId
+    const esVendedor = String(vendedorId) === String(auth.user.id)
+    const detalles = detRes.data || []
+    return new Set(
+      detalles.filter(d => d.ofrecidoVendedor === esVendedor).map(d => d.articulo.id)
+    )
+  } catch (e) {
+    return new Set()
+  }
+}
+
+const abrirSelectorArticulo = async () => {
+  mostrarSelectorArticulo.value = !mostrarSelectorArticulo.value
+  if (!mostrarSelectorArticulo.value) return
+
+  cargandoOferta.value = true
+  errorOferta.value = ''
+  try {
+    const chatId = await resolverChatIdReal(chatActivo.value)
+    console.log('[abrirSelectorArticulo] chatId resuelto:', chatId)
+    if (!chatId) {
+      errorOferta.value = 'Este chat todavía se está sincronizando. Espera unos segundos e inténtalo de nuevo.'
+      return
+    }
+
+    const [misRes, yaOfrecidos] = await Promise.all([
+      productosApi.getByUsuarioId(auth.user.id),
+      obtenerIdsYaOfrecidos()
+    ])
+    console.log('mis articulos:', misRes.data)
+
+    idsYaOfrecidos.value = yaOfrecidos
+    misArticulosOferta.value = (misRes.data || [])
+      .filter(a => a.disponible !== false)
+      .filter(a => !yaOfrecidos.has(a.id))
+  } catch (e) {
+    console.error('Error cargando tus artículos:', e)
+    errorOferta.value = 'No se pudieron cargar tus artículos.'
+  } finally {
+    cargandoOferta.value = false
+  }
+}
+
+// PARCHE TEMPORAL: el backend, cuando no existe transacción para un chatId,
+// responde 200 con un objeto "default" (GUID en ceros, fecha 0001-01-01) en
+// vez de 404. Esto detecta ese caso para no confundirlo con una transacción real.
+// TODO: quitar este parche cuando el backend entregue el verificador nuevo
+// (Ofeck dijo que no hay que usar getByChatId para esto, va a dar un endpoint
+// propio de "existe" — reemplazar aquí en cuanto esté listo).
+function esTransaccionVacia(data) {
+  if (!data) return true
+  const GUID_VACIO = '00000000-0000-0000-0000-000000000000'
+  return data.id === GUID_VACIO || data.chatId === GUID_VACIO
+}
+
+async function asegurarTransaccion() {
+  if (!chatActivo.value?.chatId) {
+    throw new Error('chatId inválido: no se puede asegurar la transacción sin un chatId real.')
+  }
+
+  let existe = false
+  try {
+    const res = await transaccionesApi.getByChatId(chatActivo.value.chatId)
+    existe = !esTransaccionVacia(res.data)
+    console.log('[asegurarTransaccion] chatId:', chatActivo.value.chatId, '| existe:', existe, '| data:', res.data)
+  } catch (e) {
+    existe = false
+    console.warn('[asegurarTransaccion] error al consultar getByChatId:', e.response?.status, e.response?.data)
+  }
+
+  if (!existe) {
+    const artRes = await productosApi.getById(chatActivo.value.articuloId)
+    console.log('[asegurarTransaccion] creando transacción -> chatId:', chatActivo.value.chatId, '| esTrueque:', artRes.data?.esTrueque)
+    await transaccionesApi.create(chatActivo.value.chatId, Boolean(artRes.data?.esTrueque))
+  }
+}
+
+const enviarArticuloAlChat = async (articulo) => {
+  if (enviandoOferta.value || idsYaOfrecidos.value.has(articulo.id)) return;
+
+  enviandoOferta.value = articulo.id;
+  errorOferta.value = '';
+
+  try {
+    const chatId = await resolverChatIdReal(chatActivo.value)
+    console.log('[enviarArticuloAlChat] chatId resuelto:', chatId)
+    if (!chatId) {
+      errorOferta.value = 'No se pudo determinar el chat de esta conversación todavía. Intenta de nuevo en unos segundos.'
+      return
+    }
+    console.log('[enviarArticuloAlChat] payload a enviar -> chatId:', chatActivo.value.chatId, '| articuloId:', articulo.id, '| articulo completo:', articulo)
+
+    await asegurarTransaccion();
+    await transaccionesApi.addDetalle(chatActivo.value.chatId, articulo.id);
+
+    await sendbirdApi.sendMessage(
+      chatActivo.value.channelUrl,
+      auth.user.id,
+      `Ofrecí: ${articulo.nombre}`,
+      {
+        customType: 'oferta_articulo',
+        data: JSON.stringify({
+          articuloId: articulo.id,
+          nombre: articulo.nombre,
+          url: articulo.url || ''
+        })
+      }
+    );
+
+    idsYaOfrecidos.value = new Set(idsYaOfrecidos.value).add(articulo.id);
+    misArticulosOferta.value = misArticulosOferta.value.filter(a => a.id !== articulo.id);
+    await cargarMensajes(chatActivo.value.channelUrl);
+    mostrarSelectorArticulo.value = false;
+
+  } catch (e) {
+    console.error('Error ofreciendo el artículo:', e);
+    errorOferta.value = 'No se pudo ofrecer el artículo. Intenta de nuevo.';
+  } finally {
+    enviandoOferta.value = null;
+  }
 }
 </script>
 
@@ -231,7 +493,25 @@ const enviarMensaje = async () => {
   font-size: 0.85rem;
   color: #aaa;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
+
+.sidebar-error { color: #d92100; }
+
+.btn-reintentar {
+  background-color: #FA2700;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-reintentar:hover { background-color: #d92100; }
 
 .chat-panel {
   flex: 1;
@@ -315,7 +595,8 @@ const enviarMensaje = async () => {
   transition: background-color 0.15s;
 }
 
-.btn-finalizar:hover { background-color: #d92100; }
+.btn-finalizar:hover:not(:disabled) { background-color: #d92100; }
+.btn-finalizar:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .messages-area {
   flex: 1;
@@ -381,6 +662,56 @@ const enviarMensaje = async () => {
   border-bottom-left-radius: 4px;
 }
 
+/* Tarjeta de oferta: imagen arriba, nombre abajo, borde rojo redondeado
+   (mismo estilo visual que .otro-card en TradeConfirmModal.vue) */
+.oferta-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 130px;
+  border: 2px solid #FA2700;
+  border-radius: 14px;
+  overflow: hidden;
+  background: white;
+}
+
+.oferta-card-thumb {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  background: #e8ddd0;
+  display: block;
+}
+.oferta-card-thumb.placeholder { background: #e8ddd0; }
+
+.oferta-card-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 10px 10px;
+  text-align: center;
+}
+
+.oferta-card-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #FA2700;
+}
+
+.oferta-card-nombre {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 .input-area {
   display: flex;
   align-items: center;
@@ -389,6 +720,8 @@ const enviarMensaje = async () => {
   border-top: 2px solid #e8ddd0;
   background: white;
 }
+
+.attach-wrap { position: relative; }
 
 .btn-attach,
 .btn-emoji {
@@ -402,8 +735,92 @@ const enviarMensaje = async () => {
   transition: color 0.15s;
 }
 
-.btn-attach:hover,
+.btn-attach:hover:not(:disabled),
 .btn-emoji:hover { color: #FA2700; }
+.btn-attach:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.attach-popover {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+}
+
+.attach-panel {
+  position: absolute;
+  bottom: 62px;
+  left: 16px;
+  width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: white;
+  border: 1.5px solid #e8ddd0;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+}
+
+.attach-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+}
+
+.attach-estado {
+  font-size: 0.8rem;
+  color: #aaa;
+  text-align: center;
+  padding: 16px 4px;
+}
+.attach-error { color: #d92100; }
+
+.attach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attach-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px solid #e8ddd0;
+  background: white;
+  border-radius: 10px;
+  padding: 6px 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.attach-item:hover:not(:disabled) { border-color: #FA2700; background-color: #fff6f4; }
+.attach-item:disabled { opacity: 0.6; cursor: default; }
+
+.attach-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #e8ddd0;
+}
+.attach-thumb.placeholder { background: #e8ddd0; }
+
+.attach-nombre {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attach-enviando {
+  font-size: 0.7rem;
+  color: #FA2700;
+  font-weight: 700;
+  flex-shrink: 0;
+}
 
 .msg-input {
   flex: 1;
