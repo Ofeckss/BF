@@ -60,5 +60,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user')
   }
 
-  return { user, isLoading, isLoggedIn, userEmail, registerUser, loginUser, logout }
+  return { user, isVenta, isLoading, isLoggedIn, userEmail, registerUser, loginUser, logout }
 })
