@@ -14,7 +14,7 @@
 
     <div class="products-grid">
       <ProductCard
-        v-for="product in products"
+        v-for="product in productsDisponibles"
         :key="product.id"
         :title="product.title"
         :location="product.ubicacion"
@@ -22,11 +22,12 @@
         :status="product.status"
         :tags="product.tags"
         :image="product.image"
+        :es-trueque="product.esTrueque"
         class="clickable-card"
         @click="goToProduct(product.id)"
       />
 
-      <div v-if="products.length === 0" class="empty-state">
+      <div v-if="productsDisponibles.length === 0" class="empty-state">
         No hay artículos publicados todavía. Crea uno nuevo para verlo aquí.
       </div>
     </div>
@@ -44,6 +45,7 @@ const router = useRouter()
 const productosStore = useProductosStore()
 
 const products = computed(() => productosStore.products)
+const productsDisponibles = computed(() => products.value.filter(p => p.status === 'Disponible'))
 
 const goToProduct = (productId) => {
   router.push({ name: 'articulo', params: { id: productId } })

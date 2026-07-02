@@ -4,7 +4,7 @@
 
       <button class="modal-close" @click="cerrar" title="Cerrar">&times;</button>
 
-      <h2 class="modal-title">Tus artículos a intercambiar</h2>
+      <h2 class="modal-title">{{ transaccion?.esTrueque ? 'Tus artículos a intercambiar' : 'Confirmar compra' }}</h2>
 
       <div v-if="cargando" class="modal-estado">Cargando información del trato...</div>
       <div v-else-if="errorMsg && !transaccion" class="modal-estado modal-error">
@@ -15,8 +15,8 @@
       <template v-else>
         <p v-if="errorMsg" class="modal-error-inline">{{ errorMsg }}</p>
 
-        <!-- Mis artículos: los que puedo ofrecer -->
-        <div class="articulos-list">
+        <!-- Mis artículos: los que puedo ofrecer (solo aplica si es trueque) -->
+        <div v-if="transaccion?.esTrueque" class="articulos-list">
           <div v-if="misArticulosDisponibles.length === 0" class="modal-vacio">
             No tienes artículos publicados para ofrecer.
           </div>
@@ -49,33 +49,51 @@
             min="0"
             step="0.01"
             placeholder="0.00"
+            :disabled="yaConfirme"
           />
         </div>
 
-        <!-- Lo que el otro usuario ofrece -->
-        <h3 class="modal-subtitle">{{ nombreOtro }} te dará:</h3>
-        <div class="otro-articulos">
-          <div v-if="articulosOtro.length === 0" class="modal-vacio small">
-            Aún no ha agregado artículos.
+        <!-- Lo que el otro usuario ofrece (solo aplica si es trueque) -->
+        <template v-if="transaccion?.esTrueque">
+          <h3 class="modal-subtitle">{{ nombreOtro }} te dará:</h3>
+          <div class="otro-articulos">
+            <div v-if="articulosOtro.length === 0" class="modal-vacio small">
+              Aún no ha agregado artículos.
+            </div>
+            <div v-for="art in articulosOtro" :key="art.id" class="otro-card">
+              <img v-if="art.imagen" :src="art.imagen" class="otro-thumb" />
+              <div v-else class="otro-thumb placeholder"></div>
+              <span>{{ art.nombre }}</span>
+            </div>
           </div>
-          <div v-for="art in articulosOtro" :key="art.id" class="otro-card">
-            <img v-if="art.imagen" :src="art.imagen" class="otro-thumb" />
-            <div v-else class="otro-thumb placeholder"></div>
-            <span>{{ art.nombre }}</span>
-          </div>
-        </div>
+        </template>
 
         <p v-if="tratoCompletado" class="modal-completado">
           🎉 ¡Trato completado! Ambos confirmaron el intercambio.
         </p>
-        <p v-else-if="yaConfirme" class="modal-espera">
+        <p v-else-if="yaConfirme && (transaccion?.esTrueque || esVendedor)" class="modal-espera">
           Ya confirmaste tu parte. Esperando confirmación de {{ nombreOtro }}...
         </p>
+
+        <p v-if="errorPago" class="modal-error-inline">{{ errorPago }}</p>
 
         <div class="modal-actions">
           <button v-if="tratoCompletado" class="btn-finalizar-modal" @click="cerrar">
             Cerrar
           </button>
+
+          <!-- Comprador ya confirmó su precio: ahora paga con Stripe -->
+          <template v-else-if="yaConfirme && !transaccion?.esTrueque && !esVendedor">
+            <button
+              class="btn-finalizar-modal"
+              @click="pagarConStripe"
+              :disabled="procesandoPago"
+            >
+              {{ procesandoPago ? 'Redirigiendo a Stripe...' : '💳 Pagar con Stripe' }}
+            </button>
+          </template>
+
+          <!-- Trueque, o vendedor confirmando su parte, o comprador aún no confirma -->
           <template v-else>
             <button class="btn-cancelar" @click="cancelarTrato" :disabled="procesando">
               Cancelar trato
@@ -96,6 +114,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import transaccionesApi from '../services/transaccionesApi'
 import productosApi from '../services/productosApi'
+import pagosApi from '../services/pagosApi'
 
 const props = defineProps({
   chatId: { type: String, required: true },
@@ -119,6 +138,10 @@ const precioOferta = ref(null)
 const transaccion = ref(null) // GetTransaccionResponse
 const detalles = ref([])      // GetDetalleResponse[]
 const misArticulosPublicados = ref([]) // mis productos publicados (para poder ofrecerlos)
+
+// --- Pago con Stripe ---
+const procesandoPago = ref(false)
+const errorPago = ref('')
 
 let pollingInterval = null
 let statusPollingInterval = null
@@ -239,6 +262,24 @@ async function cancelarTrato() {
     errorMsg.value = 'No se pudo cancelar el trato.'
   } finally {
     procesando.value = false
+  }
+}
+
+// Dispara el checkout de Stripe. Solo se llama cuando el comprador ya
+// confirmó su precio (PrecioFinal ya está guardado en el backend vía /confirmar),
+// porque PagoService.CrearCheckoutSessionAsync lee ese precio de la transacción
+// y lanza error si no es válido.
+async function pagarConStripe() {
+  procesandoPago.value = true
+  errorPago.value = ''
+  try {
+    console.log('[pagarConStripe] chatId:', props.chatId)
+    const res = await pagosApi.crearCheckout(props.chatId)
+    window.location.href = res.data.checkoutUrl
+  } catch (e) {
+    console.error('Error creando checkout de Stripe:', e)
+    errorPago.value = e.response?.data || 'No se pudo iniciar el pago. Intenta de nuevo.'
+    procesandoPago.value = false
   }
 }
 

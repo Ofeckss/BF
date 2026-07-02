@@ -9,7 +9,7 @@
           <input v-model="form.title" type="text" />
         </div>
 
-        <div class="form-group">
+        <div class="form-group" v-if="!form.esTrueque">
           <label>Precio</label>
           <input v-model.number="form.price" type="number" min="0" />
         </div>
@@ -22,14 +22,8 @@
         <div class="form-group">
           <label>Añadir Categorias / Etiquetas</label>
           <div class="chip-group">
-            <button
-              v-for="cat in productosStore.categorias"
-              :key="cat.id"
-              type="button"
-              class="chip"
-              :class="{ active: form.categoria_id === cat.id }"
-              @click="form.categoria_id = cat.id"
-            >
+            <button v-for="cat in productosStore.categorias" :key="cat.id" type="button" class="chip"
+              :class="{ active: form.categoria_id === cat.id }" @click="form.categoria_id = cat.id">
               {{ cat.nombre }}
             </button>
           </div>
@@ -38,14 +32,8 @@
         <div class="form-group">
           <label>Estado Del Producto</label>
           <div class="chip-group">
-            <button
-              v-for="est in estados"
-              :key="est.id"
-              type="button"
-              class="chip"
-              :class="{ active: form.estadoId  === est.id }"
-              @click="form.estadoId = est.id"
-            >
+            <button v-for="est in estados" :key="est.id" type="button" class="chip"
+              :class="{ active: form.estadoId === est.id }" @click="form.estadoId = est.id">
               {{ est.nombre }}
             </button>
           </div>
@@ -54,14 +42,8 @@
         <div class="form-group">
           <label>Ubicación</label>
           <div class="chip-group">
-            <button
-            v-for="ub in ubicaciones"
-            :key="ub.id"
-            type="button"
-            class="chip"
-            :class="{ active: form.ubicacionId === ub.id}"
-            @click="form.ubicacionId = ub.id"
-            >
+            <button v-for="ub in ubicaciones" :key="ub.id" type="button" class="chip"
+              :class="{ active: form.ubicacionId === ub.id }" @click="form.ubicacionId = ub.id">
               {{ ub.nombre }}
             </button>
           </div>
@@ -70,14 +52,9 @@
         <div class="form-group">
           <label>Tipo de Publicacion</label>
           <div class="chip-group">
-            <button
-              v-for="tipo in tipos"
-              :key="tipo.label"
-              type="button"
-              class="chip"
+            <button v-for="tipo in tipos" :key="tipo.label" type="button" class="chip"
               :class="{ active: form.tipoLabel === tipo.label }"
-              @click="form.esTrueque = tipo.value; form.tipoLabel = tipo.label"
-            >
+              @click="form.esTrueque = tipo.value; form.tipoLabel = tipo.label">
               {{ tipo.label }}
             </button>
           </div>
@@ -86,33 +63,23 @@
 
       <!-- Columna derecha -->
       <div class="right-col">
-        <div
-          class="upload-zone"
-          :class="{ 'drag-over': isDragging, 'has-image': previewUrl }"
-          @click="triggerFileInput"
-          @dragover.prevent="isDragging = true"
-          @dragleave.prevent="isDragging = false"
-          @drop.prevent="handleDrop"
-        >
+        <div class="upload-zone" :class="{ 'drag-over': isDragging, 'has-image': previewUrl }" @click="triggerFileInput"
+          @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop.prevent="handleDrop">
           <img v-if="previewUrl" :src="previewUrl" class="preview-img" alt="preview" />
           <div v-else class="upload-placeholder">
             <div class="upload-icon">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
                 <rect x="4" y="4" width="40" height="40" rx="10" fill="var(--brand-orange)" />
-                <path d="M24 32V16M24 16L17 23M24 16L31 23" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M14 36h20" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                <path d="M24 32V16M24 16L17 23M24 16L31 23" stroke="white" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M14 36h20" stroke="white" stroke-width="3" stroke-linecap="round" />
               </svg>
             </div>
             <p class="upload-formats">PNG, JPG, WEBP</p>
             <p class="upload-text">Haz clic o arrastra imágenes aquí</p>
           </div>
-          <input
-            ref="fileInput"
-            type="file"
-            accept="image/png, image/jpeg, image/webp"
-            class="hidden-input"
-            @change="handleFileChange"
-          />
+          <input ref="fileInput" type="file" accept="image/png, image/jpeg, image/webp" class="hidden-input"
+            @change="handleFileChange" />
         </div>
 
         <p v-if="error" class="error-msg">{{ error }}</p>
@@ -137,9 +104,8 @@ const authStore = useAuthStore()
 const productosStore = useProductosStore()
 
 const tipos = [
-  { label: 'Venta',  value: 0 },
-  { label: 'Cambio', value: 1 },
-  { label: 'Ambos',  value: 1 }
+  { label: 'Venta', value: false },
+  { label: 'Cambio', value: true }
 ]
 
 const estados = ref([])
@@ -203,7 +169,8 @@ const loadPreview = (file) => {
 const handleSubmit = async () => {
   error.value = ''
   if (!form.title.trim()) { error.value = 'El título es obligatorio.'; return }
-  if (!form.price) { error.value = 'El precio es obligatorio.'; return }
+  if (!form.tipoLabel) { error.value = 'Selecciona un tipo de publicación'; return }
+  if (!form.esTrueque && !form.price) { error.value = 'El precio es obligatorio.'; return }
   if (!form.categoria_id) { error.value = 'Selecciona una categoría'; return }
   if (!form.estadoId) { error.value = 'Selecciona un estado para el producto'; return }
   if (!form.ubicacionId) { error.value = 'Selecciona una ubicación'; return }
@@ -212,6 +179,7 @@ const handleSubmit = async () => {
   try {
     await productosStore.addProduct({
        ...form,
+       price: form.esTrueque ? 0 : form.price,
        imageFiles: selectedFile.value ? [selectedFile.value] : []
       })
     router.push('/')
@@ -406,6 +374,7 @@ const handleSubmit = async () => {
   .layout {
     grid-template-columns: 1fr;
   }
+
   .right-col {
     position: static;
   }
