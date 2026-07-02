@@ -162,16 +162,24 @@ const misArticulosDisponibles = computed(() => misArticulosPublicados.value)
 
 const cerrar = () => emit('close')
 
+const GUID_VACIO = '00000000-0000-0000-0000-000000000000'
+
 async function obtenerOCrearTransaccion(esTruequeDefault) {
+  let transRes = null
   try {
-    const transRes = await transaccionesApi.getByChatId(props.chatId)
-    return transRes.data
+    transRes = await transaccionesApi.getByChatId(props.chatId)
   } catch (e) {
-    // si no existe aún, se crea y se vuelve a pedir
-    await transaccionesApi.create(props.chatId, Boolean(esTruequeDefault))
-    const transRes = await transaccionesApi.getByChatId(props.chatId)
-    return transRes.data
+    transRes = null
   }
+
+  const noExiste = !transRes?.data || transRes.data.id === GUID_VACIO
+
+  if (noExiste) {
+    await transaccionesApi.create(props.chatId, Boolean(esTruequeDefault))
+    transRes = await transaccionesApi.getByChatId(props.chatId)
+  }
+
+  return transRes.data
 }
 
 async function cargarTodo() {
@@ -273,8 +281,9 @@ async function pagarConStripe() {
   procesandoPago.value = true
   errorPago.value = ''
   try {
-    console.log('[pagarConStripe] chatId:', props.chatId)
-    const res = await pagosApi.crearCheckout(props.chatId)
+    const monto = precioOferta.value
+    console.log('[pagarConStripe] chatId:', props.chatId, '| monto:', monto)
+    const res = await pagosApi.crearCheckout(props.chatId, monto)
     window.location.href = res.data.checkoutUrl
   } catch (e) {
     console.error('Error creando checkout de Stripe:', e)
@@ -307,8 +316,8 @@ onMounted(async () => {
   await cargarTodo()
   // refresca lo que agrega el otro usuario. 7s en vez de 4s para no saturar
   // el backend con más polling encima del que ya hace el chat de mensajes.
-  pollingInterval = setInterval(refrescarDetalles, 7000)
-  statusPollingInterval = setInterval(verificarStatus, 5000)
+  pollingInterval = setInterval(refrescarDetalles, 10000)
+  statusPollingInterval = setInterval(verificarStatus, 10000)
 })
 
 onUnmounted(() => {
