@@ -189,7 +189,7 @@ const mensajes = ref([])
 const nuevoMensaje = ref('')
 const messagesRef = ref(null)
 const mostrarModalFinalizar = ref(false)
-const avisarPago = ref(null)
+const avisoPago = ref(null)
 let pollingInterval = null
 
 // --- Ofrecer un artículo en el chat ---
