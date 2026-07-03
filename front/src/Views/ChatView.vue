@@ -43,6 +43,11 @@
       </div>
 
       <template v-else>
+        <div v-if="avisoPago" :class="['pago-banner', avisoPago.tipo === 'exitoso' ? 'pago-exitoso' : 'pago-cancelado']">
+          <span v-if="avisoPago.tipo === 'exitoso'">✅ Pago confirmado correctamente</span>
+          <span v-else>⚠️ El pago fue cancelado</span>
+          <button class="pago-banner-close" @click="avisoPago = null">x</button>
+        </div>        
         <div class="panel-header">
           <div class="panel-header-info">
             <div class="panel-img-wrap">
@@ -165,6 +170,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
 import ChatCard from '../components/ChatCard.vue'
@@ -175,6 +181,7 @@ import productosApi from '../services/productosApi'
 
 const auth = useAuthStore()
 const chatStore = useChatStore()
+const route = useRoute()
 
 const chats = ref([])
 const chatActivo = ref(null)
@@ -182,6 +189,7 @@ const mensajes = ref([])
 const nuevoMensaje = ref('')
 const messagesRef = ref(null)
 const mostrarModalFinalizar = ref(false)
+const avisarPago = ref(null)
 let pollingInterval = null
 
 // --- Ofrecer un artículo en el chat ---
@@ -195,6 +203,23 @@ const idsYaOfrecidos = ref(new Set()) // ids de MIS artículos ya ofrecidos en e
 async function inicializarChats() {
   await chatStore.loadChannels(auth.user.id)
   chats.value = chatStore.channels
+  const chatIdDesdeUrl = route.query.chatId
+  const pagoDesdeUrl = route.query.pago
+
+   if (chatIdDesdeUrl) {
+    const canalPorPago = chats.value.find(c => c.chatId === chatIdDesdeUrl)
+    if (canalPorPago) {
+      await abrirChat(canalPorPago)
+      if (pagoDesdeUrl === 'exitoso' || pagoDesdeUrl === 'cancelado') {
+        avisoPago.value = { tipo: pagoDesdeUrl }
+        setTimeout(() => { avisoPago.value = null }, 6000)
+      }
+      return
+    } else {
+      console.warn('[inicializarChats] chatId de la URL no encontrado en los canales cargados:', chatIdDesdeUrl)
+    }
+  }
+
 
   if (chatStore.activeChannelUrl) {
     const canal = chats.value.find(c => c.channelUrl === chatStore.activeChannelUrl)
@@ -859,4 +884,35 @@ const enviarArticuloAlChat = async (articulo) => {
   .chat-page.panel-open .chat-sidebar { display: none; }
   .chat-page.panel-open .chat-panel { display: flex; }
 }
+  .pago-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+ 
+  .pago-exitoso {
+    background-color: #e6f7ec;
+    color: #1a7a3d;
+    border-bottom: 2px solid #b3e6c5;
+  }
+ 
+  .pago-cancelado {
+    background-color: #fdecea;
+    color: #b3261e;
+    border-bottom: 2px solid #f5b8b3;
+  }
+ 
+  .pago-banner-close {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 900;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.6;
+ }
+ .pago-banner-close:hover { opacity: 1; }
 </style>
