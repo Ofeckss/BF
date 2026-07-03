@@ -104,13 +104,8 @@ const authStore = useAuthStore()
 const productosStore = useProductosStore()
 
 const tipos = [
-<<<<<<< HEAD
-  { label: 'Venta',  value: 0 },
-  { label: 'Ambos',  value: 1 }
-=======
   { label: 'Venta', value: false },
   { label: 'Cambio', value: true }
->>>>>>> ad963ef1499e6c3082e4fbc641e307e8074e5647
 ]
 
 const estados = ref([])

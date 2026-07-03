@@ -88,6 +88,7 @@ const proponerTrueque = async () => {
 }
 
 const iniciarCompra = async () => {
+  if (!auth.isLoggedIn) return router.push('/login')
   if (!articulo.value || articulo.value === fallback) return
 
   console.log('articulo completo (compra):', articulo.value)
