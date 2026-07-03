@@ -314,7 +314,6 @@ async function verificarStatus() {
 onMounted(async () => {
   console.log('[TradeConfirmModal] montado con chatId:', props.chatId, '| articuloId:', props.articuloId)
   await cargarTodo()
-  console.log('Es venta? ', auth.isVenta)
   // refresca lo que agrega el otro usuario. 7s en vez de 4s para no saturar
   // el backend con más polling encima del que ya hace el chat de mensajes.
   pollingInterval = setInterval(refrescarDetalles, 10000)
