@@ -13,6 +13,9 @@
     </div>
 
     <div class="tags-container">
+      <span class="tag-badge type-badge" :class="{ trueque: esTrueque }">
+        {{ esTrueque ? '🔄 Trueque' : '💳 Venta' }}
+      </span>
       <span v-for="(tag, index) in tags" :key="index" class="tag-badge">
         {{ tag }}
       </span>
@@ -53,6 +56,10 @@ defineProps({
   image: {
     type: String,
     default: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=500&auto=format&fit=crop' 
+  },
+  esTrueque: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -126,6 +133,14 @@ const formatPrice = (value) => {
   padding: 4px 10px;
   border-radius: 6px;
   font-weight: 500;
+}
+
+.type-badge {
+  background-color: var(--brand-dark-gray);
+}
+
+.type-badge.trueque {
+  background-color: var(--brand-orange);
 }
 
 .price-status-container {

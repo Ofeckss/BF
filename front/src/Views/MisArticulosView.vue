@@ -44,6 +44,7 @@
           :status="art.status"
           :tags="art.tags"
           :image="art.image"
+          :es-trueque="art.esTrueque"
         />
       </div>
     </div>

@@ -47,6 +47,7 @@ onMounted(async () => {
         price: articulo.value.Precio,
         location: articulo.value.Ubicacion?.Nombre || '',
         status: articulo.value.Disponible ? 'Disponible' : 'No disponible',
+        esTrueque: articulo.value.EsTrueque,
         tags: articulo.value.Categoria?.Nombre ? [articulo.value.Categoria.Nombre] : [],
         image: fotoRes.data?.[0]?.url || ''
       }, auth.user.id)
@@ -86,7 +87,23 @@ const proponerTrueque = async () => {
   router.push('/chat')
 }
 
-const iniciarCompra = () => {}
+const iniciarCompra = async () => {
+  if (!articulo.value || articulo.value === fallback) return
+
+  console.log('articulo completo (compra):', articulo.value)
+  console.log('vendedor:', articulo.value.vendedor)
+  console.log('vendedorId:', articulo.value.vendedor?.vendedorId)
+
+  await chatStore.openChannelForArticulo({
+    articuloId: route.params.id,
+    vendedorId: articulo.value.vendedor?.vendedorId,
+    articuloNombre: articulo.value.nombre,
+    imagenUrl: imageUrl.value,
+    sellerNickname: ownerName()
+  })
+
+  router.push('/chat')
+}
 </script>
 
 <template>
@@ -152,11 +169,11 @@ const iniciarCompra = () => {}
         </div>
 
         <div v-if="articulo.disponible" class="action-buttons-stack">
-          <button @click="proponerTrueque" class="btn-trueque">
+          <button v-if="articulo.esTrueque" @click="proponerTrueque" class="btn-trueque btn-full">
             🔄 Proponer trueque
           </button>
-          <button @click="iniciarCompra" class="btn-compra">
-            💳 Comprar
+          <button v-else @click="iniciarCompra" class="btn-compra btn-full">
+            💳 Iniciar compra
           </button>
         </div>
 
@@ -401,6 +418,11 @@ const iniciarCompra = () => {}
   font-weight: bold;
   width: 100%;
   box-shadow: 0 4px 14px rgba(70, 11, 1, 0.3);
+}
+
+.btn-full {
+  flex: 1 1 100%;
+  width: 100%;
 }
 
 @media (max-width: 900px) {
