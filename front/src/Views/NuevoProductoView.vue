@@ -11,12 +11,24 @@
 
         <div class="form-group" v-if="!form.esTrueque">
           <label>Precio</label>
-          <input v-model.number="form.price" type="number" min="0" />
+          <input
+            v-model.number="form.price"
+            type="number"
+            min="0.01"
+            step="0.01"
+            inputmode="decimal"
+            pattern="[0-9]*([.,][0-9]{1,2})?"
+            @input="sanitizePriceInput"
+          />
         </div>
 
         <div class="form-group">
           <label>Descripcion</label>
-          <textarea v-model="form.description" rows="6"></textarea>
+          <textarea
+            v-model="form.description"
+            rows="6"
+            maxlength="1000"
+          ></textarea>
         </div>
 
         <div class="form-group">
@@ -129,6 +141,15 @@ const isDragging = ref(false)
 const fileInput = ref(null)
 const loading = ref(false)
 const error = ref('')
+const MAX_DESCRIPTION_LENGTH = 1000
+
+const sanitizePriceInput = (event) => {
+  const raw = event.target.value || ''
+  const cleaned = raw.replace(/[^0-9.,]/g, '').replace(',', '.')
+  const matched = cleaned.match(/^\d+(\.\d{0,2})?/)?.[0] || ''
+  event.target.value = matched
+  form.price = matched === '' ? null : Number(matched)
+}
 
 onMounted(async () => {
   await productosStore.fetchCategorias()
@@ -170,10 +191,25 @@ const handleSubmit = async () => {
   error.value = ''
   if (!form.title.trim()) { error.value = 'El título es obligatorio.'; return }
   if (!form.tipoLabel) { error.value = 'Selecciona un tipo de publicación'; return }
-  if (!form.esTrueque && !form.price) { error.value = 'El precio es obligatorio.'; return }
+  if (!form.esTrueque) {
+    if (form.price === null || form.price === undefined || form.price === '') {
+      error.value = 'El precio es obligatorio.'
+      return
+    }
+    const priceValue = Number(form.price)
+    if (isNaN(priceValue) || priceValue <= 0) {
+      error.value = 'Ingresa un precio válido mayor a 0.'
+      return
+    }
+    form.price = Number(priceValue.toFixed(2))
+  }
   if (!form.categoria_id) { error.value = 'Selecciona una categoría'; return }
   if (!form.estadoId) { error.value = 'Selecciona un estado para el producto'; return }
   if (!form.ubicacionId) { error.value = 'Selecciona una ubicación'; return }
+  if (form.description.trim().length > MAX_DESCRIPTION_LENGTH) {
+    error.value = `La descripción no puede tener más de ${MAX_DESCRIPTION_LENGTH} caracteres.`
+    return
+  }
 
   loading.value = true
   try {
