@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainView from '../Views/MainView.vue'
 import ArticuloView from '../Views/ArticuloView.vue'
+import ResultadosBusquedaView from '../Views/ResultadosBusquedaView.vue'
 import NuevoProductoView from '../Views/NuevoProductoView.vue'
 import userApi from '../components/userApi.vue'
 import AuthLogin from '../components/auth/AuthLogin.vue'
@@ -15,6 +16,7 @@ import { useAuthStore } from '../stores/authStore.js'
 const routes = [
   { path: '/', name: 'main', component: MainView },
   { path: '/articulo/:id', name: 'articulo', component: ArticuloView, props: true },
+  { path: '/buscar', name: 'buscar', component: ResultadosBusquedaView },
   { path: '/nuevo-articulo', name: 'nuevo-articulo', component: NuevoProductoView, meta: { requiresAuth: true } },
   { path: '/users', name: 'users', component: userApi },
   { path: '/login', name: 'login', component: AuthLogin },

@@ -71,11 +71,6 @@ const regresar = () => router.push('/')
 
 const proponerTrueque = async () => {
   if (!articulo.value || articulo.value === fallback) return
-
-  console.log('articulo completo:', articulo.value)
-  console.log('vendedor:', articulo.value.vendedor)
-  console.log('vendedorId:', articulo.value.vendedor?.vendedorId)
-
   await chatStore.openChannelForArticulo({
     articuloId: route.params.id,
     vendedorId: articulo.value.vendedor?.vendedorId,
@@ -89,11 +84,6 @@ const proponerTrueque = async () => {
 
 const iniciarCompra = async () => {
   if (!articulo.value || articulo.value === fallback) return
-
-  console.log('articulo completo (compra):', articulo.value)
-  console.log('vendedor:', articulo.value.vendedor)
-  console.log('vendedorId:', articulo.value.vendedor?.vendedorId)
-
   await chatStore.openChannelForArticulo({
     articuloId: route.params.id,
     vendedorId: articulo.value.vendedor?.vendedorId,

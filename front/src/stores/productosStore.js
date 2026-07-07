@@ -8,7 +8,7 @@ const mapArticulo = (a) => ({
   title: a.nombre,
   description: a.descripcion,
   price: Number(a.precio),
-  location: a.ubicacion,
+  location: a.ubicacion?.nombre ?? '',
   status: a.disponible ? 'Disponible' : 'No disponible',
   esTrueque: a.esTrueque,         
   categoria_id: a.categoriaId,
@@ -26,6 +26,10 @@ export const useProductosStore = defineStore('productos', () => {
   const categorias = ref([])
   const loading = ref(false)
   const error = ref('')
+
+  const searchResults = ref([])
+  const searchLoading = ref(false)
+  const searchError = ref('')
  
   const getProductById = computed(
     () => (id) => products.value.find((p) => String(p.id) === String(id))
@@ -110,14 +114,39 @@ const addProduct = async (form) => {
   return res.data
 }
  
+  const searchArticulos = async (filtros) => {
+    searchLoading.value = true
+    searchError.value = ''
+    try {
+      const res = await productosApi.search(filtros)
+      if (res?.data && Array.isArray(res.data)) {
+        const articulosMapeados = res.data.map(mapArticulo)
+        searchResults.value = await fetchFotos(articulosMapeados)
+      } else {
+        searchResults.value = []
+      }
+    } catch (err) {
+      console.warn('Error al buscar articulos:', err)
+      searchError.value = 'No se pudo realizar la búsqueda.'
+      searchResults.value = []
+    } finally {
+      searchLoading.value = false
+    }
+    return searchResults.value
+  }
+
   return {
     products,
     categorias,
     loading,
     error,
+    searchResults,
+    searchLoading,
+    searchError,
     getProductById,
     fetchFromServer,
     fetchCategorias,
-    addProduct
+    addProduct,
+    searchArticulos
   }
 })
