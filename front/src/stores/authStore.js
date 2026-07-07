@@ -9,6 +9,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const user = ref(savedUser ? JSON.parse(savedUser) : null)
   const isLoading = ref(false)
+  const isAuthChecked = ref(false)
 
   const isLoggedIn = computed(() => !!user.value)
   const userEmail = computed(() => user.value?.email || '')
@@ -54,11 +55,32 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const checkAuthToken = async () => {
+    try {
+      const response = await conectarApi.get('/api/auth/me')
+      const userData = {
+        id: response.data.id,
+        email: response.data.email,
+        name: response.data.nombre
+      }
+      user.value = userData
+      localStorage.setItem('user', JSON.stringify(userData))
+      return true
+    } catch (error) {
+      user.value = null
+      localStorage.removeItem('user')
+      return false
+    } finally {
+      isAuthChecked.value = true
+    }
+  }
+
   const logout = () => {
+    conectarApi.post('/api/usuarios/logout').catch(() => {})
     disconnectSendbird()
     user.value = null
     localStorage.removeItem('user')
   }
 
-  return { user, isLoading, isLoggedIn, userEmail, registerUser, loginUser, logout }
+  return { user, isLoading, isLoggedIn, isAuthChecked, checkAuthToken, userEmail, registerUser, loginUser, logout }
 })
