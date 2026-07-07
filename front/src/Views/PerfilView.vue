@@ -146,7 +146,7 @@ onMounted(async () => {
       id: String(a.id),
       title: a.nombre,
       price: Number(a.precio),
-      location: a.ubicacion || 'Playa del Carmen',
+      location: a.ubicacion?.nombre || 'Playa del Carmen',
       status: a.disponible ? 'Disponible' : 'No disponible',
       tags: a.categoria ? [a.categoria.nombre] : [],
       image: ''

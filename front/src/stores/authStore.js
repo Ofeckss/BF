@@ -65,6 +65,9 @@ export const useAuthStore = defineStore('auth', () => {
       }
       user.value = userData
       localStorage.setItem('user', JSON.stringify(userData))
+
+      await connectSendbird(userData.id, userData.name)
+
       return true
     } catch (error) {
       user.value = null

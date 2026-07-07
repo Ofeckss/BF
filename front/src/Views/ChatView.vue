@@ -311,8 +311,8 @@ const abrirChat = async (chat) => {
   if (pollingInterval) clearInterval(pollingInterval)
 
   chatActivo.value = chat
-  console.log('[abrirChat] chat recibido:', chat)
-  console.log('[abrirChat] chatId:', chat.chatId, '| channelUrl:', chat.channelUrl)
+  //console.log('[abrirChat] chat recibido:', chat)
+  //console.log('[abrirChat] chatId:', chat.chatId, '| channelUrl:', chat.channelUrl)
 
   chatStore.setActiveChannel(chat)
   mensajes.value = []
@@ -383,9 +383,24 @@ const abrirSelectorArticulo = async () => {
     console.log('mis articulos:', misRes.data)
 
     idsYaOfrecidos.value = yaOfrecidos
-    misArticulosOferta.value = (misRes.data || [])
+    /*misArticulosOferta.value = (misRes.data || [])
+      .filter(a => a.disponible !== false)
+      .filter(a => !yaOfrecidos.has(a.id))*/
+    const filtrados = (misRes.data || [])
       .filter(a => a.disponible !== false)
       .filter(a => !yaOfrecidos.has(a.id))
+
+    misArticulosOferta.value = await Promise.all(filtrados.map(async art => {
+      try {
+        const fRes = await productosApi.getFotosByArticulo(art.id)
+        return { ...art, url: fRes?.data?.[0]?.url || '' }
+      } catch {
+        return { ...art, url: '' }
+      }
+    }))
+
+
+
   } catch (e) {
     console.error('Error cargando tus artículos:', e)
     errorOferta.value = 'No se pudieron cargar tus artículos.'
