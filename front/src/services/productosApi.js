@@ -13,6 +13,10 @@ export default {
   getByUsuarioId(id){
     return conectarApi.get(`/api/articulos/usuario/${id}`)
   },
+  search(filtros) {
+    // filtros: { Nombre, PrecioMin, PrecioMax, CategoriaId, EsTrueque, UbicacionId, EstadoId }
+    return conectarApi.post('/api/articulos/search', filtros)
+  },
   getCategorias() {
     return conectarApi.get('/api/categorias')
   },
