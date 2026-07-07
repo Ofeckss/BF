@@ -50,8 +50,8 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   // Crea (o recupera) el chat para un artículo via backend
-  async function openChannelForArticulo({ articuloId, vendedorId, articuloNombre, imagenUrl, sellerNickname }) {
-    const res = await chatApi.create(articuloId, vendedorId, articuloNombre)
+  async function openChannelForArticulo({ articuloId, vendedorId, articuloNombre, imagenUrl, sellerNickname, esTrueque }) {
+    const res = await chatApi.create(articuloId, vendedorId, articuloNombre, esTrueque)
     const channelUrl = res.data.url // el backend regresa { url, mensaje }, url = sendbird channel url
 
     activeChannelUrl.value = channelUrl

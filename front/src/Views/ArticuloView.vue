@@ -76,7 +76,8 @@ const proponerTrueque = async () => {
     vendedorId: articulo.value.vendedor?.vendedorId,
     articuloNombre: articulo.value.nombre,
     imagenUrl: imageUrl.value,
-    sellerNickname: ownerName()
+    sellerNickname: ownerName(),
+    esTrueque: articulo.value.esTrueque
   })
 
   router.push('/chat')
@@ -90,7 +91,8 @@ const iniciarCompra = async () => {
     vendedorId: articulo.value.vendedor?.vendedorId,
     articuloNombre: articulo.value.nombre,
     imagenUrl: imageUrl.value,
-    sellerNickname: ownerName()
+    sellerNickname: ownerName(),
+    esTrueque: articulo.value.esTrueque
   })
 
   router.push('/chat')
