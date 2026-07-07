@@ -46,10 +46,13 @@
             id="precio-oferta"
             v-model.number="precioOferta"
             type="number"
-            min="0"
+            min="0.01"
             step="0.01"
+            inputmode="decimal"
+            pattern="[0-9]*([.,][0-9]{1,2})?"
             placeholder="0.00"
             :disabled="yaConfirme"
+            @input="sanitizePrecioOfertaInput"
           />
         </div>
 
@@ -134,6 +137,14 @@ const tratoCompletado = ref(false) // true cuando /transacciones/status confirma
 const esVendedor = ref(false)
 const nombreOtro = ref('el otro usuario')
 const precioOferta = ref(null)
+
+const sanitizePrecioOfertaInput = (event) => {
+  const raw = event.target.value || ''
+  const cleaned = raw.replace(/[^0-9.,]/g, '').replace(',', '.')
+  const matched = cleaned.match(/^\d+(\.\d{0,2})?/)?.[0] || ''
+  event.target.value = matched
+  precioOferta.value = matched === '' ? null : Number(matched)
+}
 
 const transaccion = ref(null) // GetTransaccionResponse
 const detalles = ref([])      // GetDetalleResponse[]
@@ -281,7 +292,12 @@ async function pagarConStripe() {
   procesandoPago.value = true
   errorPago.value = ''
   try {
-    const monto = precioOferta.value
+    const monto = Number(precioOferta.value)
+    if (isNaN(monto) || monto <= 0) {
+      errorPago.value = 'El monto debe ser un número válido mayor a 0.'
+      procesandoPago.value = false
+      return
+    }
     console.log('[pagarConStripe] chatId:', props.chatId, '| monto:', monto)
     const res = await pagosApi.crearCheckout(props.chatId, monto)
     window.location.href = res.data.checkoutUrl
