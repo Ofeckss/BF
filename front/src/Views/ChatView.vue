@@ -409,7 +409,7 @@ const abrirSelectorArticulo = async () => {
   }
 }
 
-// PARCHE TEMPORAL: el backend, cuando no existe transacción para un chatId,
+/* PARCHE TEMPORAL: el backend, cuando no existe transacción para un chatId,
 // responde 200 con un objeto "default" (GUID en ceros, fecha 0001-01-01) en
 // vez de 404. Esto detecta ese caso para no confundirlo con una transacción real.
 // TODO: quitar este parche cuando el backend entregue el verificador nuevo
@@ -430,7 +430,7 @@ async function asegurarTransaccion() {
   try {
     const res = await transaccionesApi.getByChatId(chatActivo.value.chatId)
     existe = !esTransaccionVacia(res.data)
-    console.log('[asegurarTransaccion] chatId:', chatActivo.value.chatId, '| existe:', existe, '| data:', res.data)
+    //console.log('[asegurarTransaccion] chatId:', chatActivo.value.chatId, '| existe:', existe, '| data:', res.data)
   } catch (e) {
     existe = false
     console.warn('[asegurarTransaccion] error al consultar getByChatId:', e.response?.status, e.response?.data)
@@ -438,10 +438,10 @@ async function asegurarTransaccion() {
 
   if (!existe) {
     const artRes = await productosApi.getById(chatActivo.value.articuloId)
-    console.log('[asegurarTransaccion] creando transacción -> chatId:', chatActivo.value.chatId, '| esTrueque:', artRes.data?.esTrueque)
+    //console.log('[asegurarTransaccion] creando transacción -> chatId:', chatActivo.value.chatId, '| esTrueque:', artRes.data?.esTrueque)
     await transaccionesApi.create(chatActivo.value.chatId, Boolean(artRes.data?.esTrueque))
   }
-}
+}*/
 
 const enviarArticuloAlChat = async (articulo) => {
   if (enviandoOferta.value || idsYaOfrecidos.value.has(articulo.id)) return;
@@ -458,7 +458,7 @@ const enviarArticuloAlChat = async (articulo) => {
     }
     console.log('[enviarArticuloAlChat] payload a enviar -> chatId:', chatActivo.value.chatId, '| articuloId:', articulo.id, '| articulo completo:', articulo)
 
-    await asegurarTransaccion();
+    //await asegurarTransaccion();
     await transaccionesApi.addDetalle(chatActivo.value.chatId, articulo.id);
 
     await sendbirdApi.sendMessage(
