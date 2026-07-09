@@ -6,9 +6,11 @@
         <span class="resultados-count">({{ resultadosFiltrados.length }})</span>
       </h2>
 
+    <!-- filtro de mostrar no disponibles sujeto a eliminación o cambios -->
+
       <label class="check-no-disponibles">
         <input type="checkbox" v-model="mostrarNoDisponibles" />
-        Mostrar no disponibles
+        Mostrar no disponibles (opcion sujeta a cambios)
       </label>
     </div>
 
@@ -60,8 +62,7 @@ const resultadosFiltrados = computed(() => {
 })
 
 const buscar = () => {
-  // El backend espera Nombre (y opcionalmente PrecioMin, PrecioMax,
-  // CategoriaId, EsTrueque, UbicacionId, EstadoId) para filtros futuros.
+
   productosStore.searchArticulos({
     Nombre: query.value || null
   })
@@ -69,8 +70,6 @@ const buscar = () => {
 
 onMounted(buscar)
 
-// Si el usuario busca de nuevo desde la navbar estando ya en /buscar,
-// la ruta cambia el query param y volvemos a pedir resultados.
 watch(query, buscar)
 </script>
 
