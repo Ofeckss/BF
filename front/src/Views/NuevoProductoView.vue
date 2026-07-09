@@ -8,7 +8,6 @@
           <label>Titulo</label>
           <input v-model="form.title" type="text" />
         </div>
-
         <div class="form-group" v-if="!form.esTrueque">
           <label>Precio</label>
           <input
@@ -28,6 +27,7 @@
             v-model="form.description"
             rows="6"
             maxlength="1000"
+            required
           ></textarea>
         </div>
 
@@ -202,6 +202,10 @@ const handleSubmit = async () => {
       return
     }
     form.price = Number(priceValue.toFixed(2))
+  }
+  if (!form.description || !form.description.trim()) {
+    error.value = 'La descripción es obligatoria.'
+    return
   }
   if (!form.categoria_id) { error.value = 'Selecciona una categoría'; return }
   if (!form.estadoId) { error.value = 'Selecciona un estado para el producto'; return }
