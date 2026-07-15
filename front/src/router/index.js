@@ -18,6 +18,7 @@ const routes = [
   { path: '/articulo/:id', name: 'articulo', component: ArticuloView, props: true },
   { path: '/buscar', name: 'buscar', component: ResultadosBusquedaView },
   { path: '/nuevo-articulo', name: 'nuevo-articulo', component: NuevoProductoView, meta: { requiresAuth: true } },
+  { path: '/editar-articulo/:id', name: 'editar-articulo', component: NuevoProductoView, meta: { requiresAuth: true }, props: true },
   { path: '/users', name: 'users', component: userApi },
   { path: '/login', name: 'login', component: AuthLogin },
   { path: '/registro', name: 'registro', component: AuthRegistro },

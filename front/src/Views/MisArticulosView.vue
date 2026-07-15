@@ -46,6 +46,9 @@
           :image="art.image"
           :es-trueque="art.esTrueque"
         />
+        <button class="btn-editar" @click.stop="router.push(`/editar-articulo/${art.id}`)">
+          ✏️ Editar
+        </button>
       </div>
     </div>
 
@@ -91,7 +94,7 @@ onMounted(async () => {
       id: String(a.id),
       title: a.nombre,
       price: Number(a.precio),
-      location: a.ubicacion || 'Playa del Carmen',
+      location: a.ubicacion?.nombre || 'Playa del Carmen',
       status: a.disponible ? 'Disponible' : 'No disponible',
       esTrueque: a.esTrueque,
       tags: a.categoria ? [a.categoria.nombre] : [],
@@ -184,9 +187,25 @@ h1 {
 .card-wrap {
   cursor: pointer;
   transition: transform 0.15s;
+  position: relative; 
 }
 
 .card-wrap:hover { transform: translateY(-3px); }
+
+ .btn-editar {
+   margin-top: 8px;
+   width: 100%;
+   background: white;
+   color: #FA2700;
+   border: 2px solid #FA2700;
+   border-radius: 8px;
+   padding: 6px 12px;
+   font-size: 0.82rem;
+   font-weight: 700;
+   cursor: pointer;
+   transition: background-color 0.15s;
+ }
+ .btn-editar:hover { background-color: #fff3f0; }
 
 .empty-state {
   display: flex;

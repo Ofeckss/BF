@@ -6,5 +6,8 @@ export default {
     },
     create(nuevoUsuario) {
         return conectarApi.post('/auth/register', nuevoUsuario)
+    },
+    update(id, payload){
+        return conectarApi.patch(`/api/usuarios/${id}/update`, payload)
     }
 }

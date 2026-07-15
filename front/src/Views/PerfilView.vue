@@ -21,7 +21,7 @@
           {{ auth.user?.ubicacion || 'Playa del Carmen' }}
         </li>
       </ul>
-
+      <button class="btn-settings" @click="router.push('/ajustes')">Editar perfil</button>
       <div class="stats-box">
         <h4>Estadísticas</h4>
         <div class="stat-row">
@@ -340,6 +340,20 @@ onMounted(async () => {
 }
 
 .btn-secondary:hover { background-color: #fff3f0; }
+
+.btn-settings {
+  background-color: #FA2700;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-settings:hover { background-color: #d92100; }
 
 .cards-row {
   display: flex;

@@ -12,8 +12,12 @@
       </h2>
       <div class="fields-group">
         <div class="field">
-          <label>Nombre completo</label>
-          <input v-model="form.name" type="text" placeholder="Tu nombre completo" />
+          <label>Nombre</label>
+          <input v-model="form.name" type="text" placeholder="Tu nombre" />
+        </div>
+        <div class="field">
+          <label>Apellido</label>
+          <input v-model="form.apellido" type="text" placeholder="Tu apellido" />
         </div>
         <div class="field">
           <label>Correo electrónico</label>
@@ -21,8 +25,12 @@
           <span class="field-hint">El correo no se puede cambiar</span>
         </div>
         <div class="field">
+          <label>Fecha de Nacimiento</label>
+          <input v-model="form.fechaN" type="date" />
+        </div>
+        <div class="field">
           <label>Teléfono</label>
-          <input v-model="form.telefono" type="tel" placeholder="+52 984 000 0000" />
+          <input v-model="form.telefono" type="tel" placeholder="984 000 0000" />
         </div>
       </div>
     </section>
@@ -52,30 +60,12 @@
         Seguridad
       </h2>
       <div class="fields-group">
-        <div v-if="!cambiandoPassword" class="field field-row">
+        <div class="field field-row">
           <div class="field-info">
             <label>Contraseña</label>
-            <span class="field-hint">Última actualización: hace algún tiempo</span>
+            <span class="field-hint">Próximamente disponible</span>
           </div>
-          <button class="btn-secondary" @click="cambiandoPassword = true">Cambiar contraseña</button>
-        </div>
-        <div v-else class="password-form">
-          <div class="field">
-            <label>Contraseña actual</label>
-            <input v-model="passwords.actual" type="password" placeholder="••••••••" />
-          </div>
-          <div class="field">
-            <label>Nueva contraseña</label>
-            <input v-model="passwords.nueva" type="password" placeholder="••••••••" />
-          </div>
-          <div class="field">
-            <label>Confirmar nueva contraseña</label>
-            <input v-model="passwords.confirmar" type="password" placeholder="••••••••" />
-          </div>
-          <div class="password-actions">
-            <button class="btn-primary" @click="cambiarPassword">Guardar nueva contraseña</button>
-            <button class="btn-ghost" @click="cambiandoPassword = false">Cancelar</button>
-          </div>
+          <button class="btn-secondary" disabled>Cambiar contraseña</button>
         </div>
       </div>
     </section>
@@ -103,14 +93,17 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
+import usuariosApi from '../services/usuariosApi'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const form = ref({
   name: '',
+  apellido: '',
   email: '',
   telefono: '',
+  fechaN: '',
   ubicacion: ''
 })
 
@@ -122,8 +115,10 @@ const toast = ref({ visible: false, msg: '', type: 'success' })
 onMounted(() => {
   form.value = {
     name: auth.user?.name || '',
+    apellido: auth.user?.apellido || '',
     email: auth.user?.email || '',
     telefono: auth.user?.telefono || '',
+    fechaN: auth.user?.fechaN || '',
     ubicacion: auth.user?.ubicacion || ''
   }
 })
@@ -136,13 +131,33 @@ const mostrarToast = (msg, type = 'success') => {
 const guardarCambios = async () => {
   guardando.value = true
   try {
-    // Actualizar localmente en el store (conectar al endpoint cuando esté disponible)
+    /* Actualizar localmente en el store (conectar al endpoint cuando esté disponible)
     const updated = { ...auth.user, ...form.value }
     auth.user = updated
     localStorage.setItem('user', JSON.stringify(updated))
+    mostrarToast('Cambios guardados correctamente')*/
+    const payload = {
+      nombre: form.value.name || null,
+      apellido: form.value.apellido || null,
+      fechaNacimiento: form.value.fechaN || null,
+      numeroCel: form.value.telefono || null,
+      password: null
+    }
+    console.log(payload)
+    await usuariosApi.update(auth.user.id, payload)
+
+    const updated = {
+      ...auth.user,
+      name: form.value.name,
+      apellido: form.value.apellido,
+      fechaN: form.value.fechaN,
+      telefono: form.value.telefono
+    }
+    auth.user = updated
+    localStorage.setItem('user', JSON.stringify(updated))
     mostrarToast('Cambios guardados correctamente')
-  } catch {
-    mostrarToast('Error al guardar los cambios', 'error')
+  } catch (e) {
+    console.error('Error al guardar cambios:', e.response?.data || e)
   } finally {
     guardando.value = false
   }

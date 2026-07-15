@@ -1,7 +1,6 @@
 <template>
   <div class="page">
-    <h1 class="page-title">Publicar Producto</h1>
-
+    <h1 class="page-title">{{ esEdicion ? 'Editar Producto' : 'Publicar Producto' }}</h1>
     <div class="layout">
       <div class="left-col">
         <div class="form-group">
@@ -75,8 +74,14 @@
 
       <!-- Columna derecha -->
       <div class="right-col">
-        <div class="upload-zone" :class="{ 'drag-over': isDragging, 'has-image': previewUrl }" @click="triggerFileInput"
-          @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop.prevent="handleDrop">
+        <div
+          class="upload-zone"
+          :class="{ 'drag-over': isDragging, 'has-image': previewUrl, 'disabled': esEdicion }"
+          @click="!esEdicion && triggerFileInput()"
+          @dragover.prevent="!esEdicion && (isDragging = true)"
+          @dragleave.prevent="isDragging = false"
+          @drop.prevent="!esEdicion && handleDrop($event)"
+        >
           <img v-if="previewUrl" :src="previewUrl" class="preview-img" alt="preview" />
           <div v-else class="upload-placeholder">
             <div class="upload-icon">
@@ -90,14 +95,15 @@
             <p class="upload-formats">PNG, JPG, WEBP</p>
             <p class="upload-text">Haz clic o arrastra imágenes aquí</p>
           </div>
-          <input ref="fileInput" type="file" accept="image/png, image/jpeg, image/webp" class="hidden-input"
+          <input v-if="!esEdicion" ref="fileInput" type="file" accept="image/png, image/jpeg, image/webp" class="hidden-input"
             @change="handleFileChange" />
         </div>
+        <p v-if="esEdicion" class="edit-photo-hint">La foto no se puede editar por ahora.</p>
 
         <p v-if="error" class="error-msg">{{ error }}</p>
 
         <button class="btn-publish" :disabled="loading" @click="handleSubmit">
-          {{ loading ? 'Publicando...' : 'Publicar Producto' }}
+          {{ loading ? (esEdicion ? 'Guardando...' : 'Publicando...') : (esEdicion ? 'Guardar cambios' : 'Publicar Producto') }}
         </button>
       </div>
     </div>
@@ -106,12 +112,13 @@
 
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useProductosStore } from '../stores/productosStore'
 import { useAuthStore } from '../stores/authStore'
 import productosApi from '../services/productosApi'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const productosStore = useProductosStore()
 
@@ -122,6 +129,7 @@ const tipos = [
 
 const estados = ref([])
 const ubicaciones = ref([])
+const esEdicion = ref(!!route.params.id)
 
 const form = reactive({
   title: '',
@@ -163,6 +171,30 @@ onMounted(async () => {
   } catch (err) {
     console.warn('No se pudieron cargar estados o ubicaciones', err)
   }
+
+    if (esEdicion.value) {
+      try {
+        const [articuloRes, fotoRes] = await Promise.all([
+          productosApi.getById(route.params.id),
+          productosApi.getFotosByArticulo(route.params.id)
+        ])
+        const a = articuloRes.data
+ 
+        form.title = a.nombre || ''
+        form.description = a.descripcion || ''
+        form.categoria_id = a.categoriaId ?? a.categoria?.id ?? null
+        form.estadoId = a.estadoId ?? a.estado?.id ?? null
+        form.ubicacionId = a.ubicacionId ?? a.ubicacion?.id ?? null
+        form.esTrueque = Boolean(a.esTrueque)
+        form.tipoLabel = a.esTrueque ? 'Cambio' : 'Venta'
+        form.price = a.esTrueque ? '' : a.precio
+ 
+        previewUrl.value = fotoRes.data?.[0]?.url || ''
+      } catch (err) {
+        console.error('No se pudo cargar el artículo para editar:', err)
+        error.value = 'No se pudo cargar el artículo a editar.'
+      }
+    }
 })
 
 const triggerFileInput = () => fileInput.value?.click()
@@ -217,14 +249,19 @@ const handleSubmit = async () => {
 
   loading.value = true
   try {
-    await productosStore.addProduct({
-       ...form,
-       price: form.esTrueque ? 0 : form.price,
-       imageFiles: selectedFile.value ? [selectedFile.value] : []
-      })
-    router.push('/')
+      if (esEdicion.value) {
+        await productosStore.updateProduct(route.params.id, form)
+        router.push('/mis-articulos')
+      } else {
+        await productosStore.addProduct({
+          ...form,
+          price: form.esTrueque ? 0 : form.price,
+          imageFiles: selectedFile.value ? [selectedFile.value] : []
+        })
+        router.push('/')
+      }
   } catch (err) {
-    error.value = 'No se pudo publicar el artículo.'
+    error.value = esEdicion.value ? 'No se pudo guardar los cambios.' : 'No se pudo publicar el artículo.'
   } finally {
     loading.value = false
   }
@@ -349,6 +386,18 @@ const handleSubmit = async () => {
   border-style: solid;
   border-color: var(--brand-brown);
 }
+
+ .upload-zone.disabled {
+   cursor: default;
+   opacity: 0.85;
+ }
+ 
+ .edit-photo-hint {
+   font-size: 0.85rem;
+   color: #999;
+   text-align: center;
+   margin: -12px 0 0;
+ }
 
 .upload-placeholder {
   display: flex;

@@ -41,5 +41,8 @@ export default {
   },
   getUbicaciones() {
     return conectarApi.get('/api/ubicaciones')
+  },
+  updateArticulo(id, payload) {
+    return conectarApi.patch(`/api/articulos/${id}/update`, payload)
   }
 }

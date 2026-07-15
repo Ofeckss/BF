@@ -135,6 +135,20 @@ const addProduct = async (form) => {
     return searchResults.value
   }
 
+  const updateProduct = async (id, form) => {
+    const payload = {
+      nombre: form.title || null,
+      descripcion: form.description || null,
+      precio: form.esTrueque ? 0 : Number(form.price),
+      esTrueque: Boolean(form.esTrueque),
+      categoriaId: form.categoria_id || null,
+      estadoId: form.estadoId || null,
+      ubicacionId: form.ubicacionId || null
+    }
+    await productosApi.update(id, payload)
+    await fetchFromServer()
+  }
+
   return {
     products,
     categorias,
@@ -147,6 +161,7 @@ const addProduct = async (form) => {
     fetchFromServer,
     fetchCategorias,
     addProduct,
+    updateProduct,
     searchArticulos
   }
 })
