@@ -10,10 +10,15 @@ const conectarApi = axios.create({
     }
 })
 
+const RUTAS_EXCLUIDAS_DE_LOGOUT = ['/api/usuarios/logout', '/api/auth/me'];
+
 conectarApi.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const url = error.config?.url || '';
+        const esRutaExcluida = RUTAS_EXCLUIDAS_DE_LOGOUT.some(ruta => url.includes(ruta));
+
+        if (error.response?.status === 401 && !esRutaExcluida) {
             const auth = useAuthStore()
             auth.logout()
         }
