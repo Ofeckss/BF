@@ -19,7 +19,7 @@ const handleRegister = async () => {
   isLoading.value = true 
   try {
 
-    await auth.registerUser(registerForm.name, registerForm.email, registerForm.password)
+    await auth.registerUser(registerForm.name, registerForm.email, registerForm.password, 1)
     
     alert("Cuenta creada exitosamente")
     router.push('/login')

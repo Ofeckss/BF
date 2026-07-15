@@ -14,13 +14,14 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => !!user.value)
   const userEmail = computed(() => user.value?.email || '')
 
-  const registerUser = async (name, email, password) => {
+  const registerUser = async (name, email, password, rol) => {
     isLoading.value = true
     try {
       await conectarApi.post('/api/usuarios/register', {
         Nombre: name,
         Email: email,
         Password: password,
+        Rol: rol
       })
     } finally {
       isLoading.value = false
