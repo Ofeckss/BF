@@ -5,7 +5,7 @@
     <aside class="sidebar">
       <div class="avatar-circle">{{ initials }}</div>
       <h2 class="user-name">{{ auth.user?.name || 'Usuario' }}</h2>
-      <p class="user-since">Miembro desde {{ memberSince }}</p>
+      <!--<p class="user-since">Miembro desde {{ memberSince }}</p>-->
 
       <ul class="user-details">
         <li>

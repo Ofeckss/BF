@@ -46,9 +46,18 @@
           :image="art.image"
           :es-trueque="art.esTrueque"
         />
-        <button class="btn-editar" @click.stop="router.push(`/editar-articulo/${art.id}`)">
-          ✏️ Editar
-        </button>
+        <div v-if="art.status === 'Disponible'" class="acciones-articulo">
+          <button class="btn-editar" @click.stop="router.push(`/editar-articulo/${art.id}`)">
+             Editar
+          </button>
+          <button
+            class="btn-eliminar"
+            :disabled="eliminandoId === art.id"
+            @click.stop="confirmarEliminar(art.id)"
+          >
+            {{ eliminandoId === art.id ? 'Eliminando...' : ' Eliminar' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -68,6 +77,7 @@ const auth = useAuthStore()
 const articulos = ref([])
 const loading = ref(false)
 const filtroActivo = ref('todos')
+const eliminandoId = ref(null)
 
 const filtros = [
   { key: 'todos', label: 'Todos' },
@@ -83,6 +93,20 @@ const articulosFiltrados = computed(() => {
   if (filtroActivo.value === 'venta') return articulos.value.filter(a => !a.esTrueque)
   return articulos.value
 })
+
+const confirmarEliminar = async (id) => {
+  if (!confirm('¿Seguro que quieres eliminar este artículo? Esta acción no se puede deshacer.')) return
+  eliminandoId.value = id
+  try {
+    await productosApi.deleteArticulo(id)
+    articulos.value = articulos.value.filter(a => a.id !== id)
+  } catch (err) {
+    console.error('Error al eliminar el artículo:', err.response?.data || err)
+    alert('No se pudo eliminar el artículo.')
+  } finally {
+    eliminandoId.value = null
+  }
+}
 
 onMounted(async () => {
   if (!auth.user?.id) return
@@ -192,20 +216,43 @@ h1 {
 
 .card-wrap:hover { transform: translateY(-3px); }
 
- .btn-editar {
-   margin-top: 8px;
-   width: 100%;
-   background: white;
-   color: #FA2700;
-   border: 2px solid #FA2700;
-   border-radius: 8px;
-   padding: 6px 12px;
-   font-size: 0.82rem;
-   font-weight: 700;
-   cursor: pointer;
-   transition: background-color 0.15s;
- }
- .btn-editar:hover { background-color: #fff3f0; }
+.acciones-articulo {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-editar {
+  flex: 1;
+
+  background: white;
+  color: #FA2700;
+  border: 2px solid #FA2700;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-editar:hover { background-color: #fff3f0; }
+
+.btn-eliminar {
+  flex: 1;
+  background: white;
+  color: #c0392b;
+  border: 2px solid #c0392b;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-eliminar:hover:not(:disabled) { background-color: #fff5f5; }
+.btn-eliminar:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .empty-state {
   display: flex;

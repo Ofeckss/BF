@@ -261,6 +261,7 @@ const handleSubmit = async () => {
         router.push('/')
       }
   } catch (err) {
+    console.error('Error al guardar el artículo:', err.response?.data || err)
     error.value = esEdicion.value ? 'No se pudo guardar los cambios.' : 'No se pudo publicar el artículo.'
   } finally {
     loading.value = false

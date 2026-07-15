@@ -44,5 +44,8 @@ export default {
   },
   updateArticulo(id, payload) {
     return conectarApi.patch(`/api/articulos/${id}/update`, payload)
+  },
+  deleteArticulo(id) {
+    return conectarApi.delete(`/api/articulos/${id}/delete`)
   }
 }

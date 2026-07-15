@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import conectarApi from '../services/api'
 import productosApi from '../services/productosApi'
@@ -17,6 +17,26 @@ const articulo = ref(null)
 const imageUrl = ref('')
 const loading = ref(true)
 const error = ref('')
+const eliminando = ref(false)
+
+const esDueño = computed(() => {
+  const vendedorId = articulo.value?.vendedor?.vendedorId
+  return auth.isLoggedIn && vendedorId && String(vendedorId) === String(auth.user.id)
+})
+
+const confirmarEliminar = async () => {
+  if (!confirm('¿Seguro que quieres eliminar este artículo? Esta acción no se puede deshacer.')) return
+  eliminando.value = true
+  try {
+    await productosApi.deleteArticulo(route.params.id) // ajustar nombre según lo que confirmemos
+    router.push('/mis-articulos')
+  } catch (err) {
+    console.error('Error al eliminar el artículo:', err.response?.data || err)
+    alert('No se pudo eliminar el artículo.')
+  } finally {
+    eliminando.value = false
+  }
+}
 
 const fallback = {
   Nombre: 'Articulo no encontrado',
@@ -118,6 +138,14 @@ const iniciarCompra = async () => {
             :alt="articulo.Nombre" 
             class="display-img" 
           />
+        </div>
+        <div v-if="esDueño && articulo.disponible" class="owner-actions">
+          <button class="btn-editar-articulo" @click="router.push(`/editar-articulo/${route.params.id}`)">
+            Editar producto
+          </button>
+          <button class="btn-eliminar-articulo" :disabled="eliminando" @click="confirmarEliminar">
+            {{ eliminando ? 'Eliminando...' : ' Eliminar producto' }}
+          </button>
         </div>
       </div>
 
@@ -427,4 +455,36 @@ const iniciarCompra = async () => {
   .main-image-box { height: 350px; }
   .action-buttons-stack { flex-direction: column; }
 }
+
+.owner-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.btn-editar-articulo,
+.btn-eliminar-articulo {
+  flex: 1;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-editar-articulo {
+  background: white;
+  color: var(--brand-orange);
+  border: 2px solid var(--brand-orange);
+}
+.btn-editar-articulo:hover { background-color: #fff3f0; }
+
+.btn-eliminar-articulo {
+  background: white;
+  color: #c0392b;
+  border: 2px solid #c0392b;
+}
+.btn-eliminar-articulo:hover:not(:disabled) { background-color: #fff5f5; }
+.btn-eliminar-articulo:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

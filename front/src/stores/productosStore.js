@@ -145,7 +145,7 @@ const addProduct = async (form) => {
       estadoId: form.estadoId || null,
       ubicacionId: form.ubicacionId || null
     }
-    await productosApi.update(id, payload)
+    await productosApi.updateArticulo(id, payload)
     await fetchFromServer()
   }
 

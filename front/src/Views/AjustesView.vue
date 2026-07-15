@@ -107,8 +107,6 @@ const form = ref({
   ubicacion: ''
 })
 
-const passwords = ref({ actual: '', nueva: '', confirmar: '' })
-const cambiandoPassword = ref(false)
 const guardando = ref(false)
 const toast = ref({ visible: false, msg: '', type: 'success' })
 
@@ -141,9 +139,8 @@ const guardarCambios = async () => {
       apellido: form.value.apellido || null,
       fechaNacimiento: form.value.fechaN || null,
       numeroCel: form.value.telefono || null,
-      password: null
     }
-    console.log(payload)
+    //console.log(payload)
     await usuariosApi.update(auth.user.id, payload)
 
     const updated = {
@@ -163,7 +160,7 @@ const guardarCambios = async () => {
   }
 }
 
-const cambiarPassword = async () => {
+/*const cambiarPassword = async () => {
   if (passwords.value.nueva !== passwords.value.confirmar) {
     mostrarToast('Las contraseñas no coinciden', 'error')
     return
@@ -176,7 +173,7 @@ const cambiarPassword = async () => {
   mostrarToast('Contraseña actualizada correctamente')
   cambiandoPassword.value = false
   passwords.value = { actual: '', nueva: '', confirmar: '' }
-}
+}*/
 
 const confirmarEliminar = () => {
   if (confirm('¿Seguro que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')) {
