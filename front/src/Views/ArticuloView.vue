@@ -93,6 +93,7 @@ const regresar = () => router.push('/')
 
 const proponerTrueque = async () => {
   if (!articulo.value || articulo.value === fallback) return
+  if (esDueño.value) return
   await chatStore.openChannelForArticulo({
     articuloId: route.params.id,
     vendedorId: articulo.value.vendedor?.vendedorId,
@@ -108,6 +109,7 @@ const proponerTrueque = async () => {
 const iniciarCompra = async () => {
   if (!auth.isLoggedIn) return router.push('/login')
   if (!articulo.value || articulo.value === fallback) return
+  if (esDueño.value) return
   await chatStore.openChannelForArticulo({
     articuloId: route.params.id,
     vendedorId: articulo.value.vendedor?.vendedorId,
@@ -191,7 +193,13 @@ const iniciarCompra = async () => {
           </div>
         </div>
 
-        <div v-if="articulo.disponible" class="action-buttons-stack">
+        <div v-if="articulo.disponible && esDueño" class="action-buttons-stack">
+          <button disabled class="btn-primary-action-disabled">
+            Este es tu artículo publicado
+          </button>
+        </div>
+
+        <div v-else-if="articulo.disponible" class="action-buttons-stack">
           <button v-if="articulo.esTrueque" @click="proponerTrueque" class="btn-trueque btn-full">
             🔄 Proponer trueque
           </button>

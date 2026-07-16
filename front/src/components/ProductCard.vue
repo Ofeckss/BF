@@ -22,7 +22,8 @@
     </div>
 
     <div class="price-status-container">
-      <span class="product-price">${{ formatPrice(price) }}</span>
+      <span v-if="esTrueque" class="product-price trueque-label">🔄 Trueque</span>
+      <span v-else class="product-price">${{ formatPrice(price) }}</span>
       <span class="status-badge">{{ status }}</span>
     </div>
   </div>
@@ -155,6 +156,11 @@ const formatPrice = (value) => {
   font-size: 1.4rem;
   font-weight: bold;
   color: var(--brand-red); 
+}
+
+.product-price.trueque-label {
+  color: var(--brand-orange);
+  font-size: 1.1rem;
 }
 
 .status-badge {

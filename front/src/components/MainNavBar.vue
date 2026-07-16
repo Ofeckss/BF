@@ -1,189 +1,151 @@
 <template>
-  <nav class="navbar-container">
-
-    <!-- Logo -->
-    <div @click="router.push('/')" class="logo-box">
-      BARTIFY
+  <div class="main-view-container">
+    <HeroBanner />
+    
+    <div class="main-actions-bar">
+      <div>
+        <h2>Artículos publicados</h2>
+        <p>Revisa los artículos disponibles y haz clic en cualquiera para ver los detalles.</p>
+      </div>
+        <button class="btn-new-product" @click="router.push('/nuevo-articulo')">
+          Publicar artículo
+        </button>
     </div>
+      <div v-if="puedeGestionar" class="admin-toggle">
+        <label class="check-no-disponibles">
+          <input type="checkbox" v-model="mostrarNoDisponibles" />
+          Mostrar artículos no disponibles
+        </label>
+      </div>
+ 
+      <p v-if="productosStore.loading" class="estado-msg">Buscando artículos...</p>
+ 
+      <p v-else-if="productosStore.error" class="estado-msg">
+        {{ productosStore.error }}
+      </p>
+ 
+      <div v-else-if="resultadosFiltrados.length === 0" class="empty-state">
+        No hay artículos publicados todavía. Crea uno nuevo para verlo aquí.
+      </div>
+ 
+      <div v-else class="products-grid">
+        <ProductCard
+          v-for="product in resultadosFiltrados"
+          :key="product.id"
+          :title="product.title"
+          :location="product.location"
+          :price="product.price"
+          :status="product.status"
+          :tags="product.tags"
+          :image="product.image"
+          :es-trueque="product.esTrueque"
+          class="clickable-card"
+          @click="goToProduct(product.id)"
+        />
+      </div>
+  </div>
 
-    <!-- Barra de búsqueda -->
-    <div class="search-wrapper">
-      <input
-        type="text"
-        placeholder="Search bar"
-        class="search-input"
-        v-model="searchQuery"
-        @keyup.enter="submitSearch"
-      />
-      <button class="search-btn" @click="submitSearch">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none">
-          <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="currentColor"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Controles derecha -->
-    <div class="controls-group">
-      
-      <!-- Sin sesión -->
-      <button
-        v-if="!auth.isLoggedIn"
-        @click="router.push('/login')"
-        class="btn-nav-badge"
-      >
-        <div class="icon-circle account-lavender">
-          <svg class="badge-icon" viewBox="0 0 24 24" fill="none">
-            <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
-          </svg>
-        </div>
-        <span class="badge-text">Cuenta</span>
-      </button>
-
-      <!-- Con sesión: dropdown -->
-      <AccountDropdown v-else />
-
-    </div>
-
-  </nav>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useProductosStore } from '../stores/productosStore'
 import { useAuthStore } from '../stores/authStore'
-import AccountDropdown from './AccountDropdown.vue'
+import HeroBanner from '../components/HeroBanner.vue'
+import ProductCard from '../components/ProductCard.vue'
 
 const router = useRouter()
+const productosStore = useProductosStore()
 const auth = useAuthStore()
 
-const searchQuery = ref('')
+const puedeGestionar = computed(() => auth.esAdmin)
+const mostrarNoDisponibles = ref(false)
 
-const submitSearch = () => {
-  const q = searchQuery.value.trim()
-  router.push({ path: '/buscar', query: q ? { q } : {} })
+const resultadosFiltrados = computed(() => {
+  const misArticulosExcluidos = productosStore.products.filter(
+    (p) => String(p.vendedor_id) !== String(auth.user?.id)
+  )
+
+  if (mostrarNoDisponibles.value) return misArticulosExcluidos
+  return misArticulosExcluidos.filter((p) => p.status === 'Disponible')
+})
+
+//const products = computed(() => productosStore.products)
+//const productsDisponibles = computed(() => products.value.filter(p => p.status === 'Disponible'))
+
+const goToProduct = (productId) => {
+  router.push({ name: 'articulo', params: { id: productId } })
 }
+
+onMounted(() => {
+  productosStore.fetchFromServer()
+})
 </script>
 
 <style scoped>
-.navbar-container {
+.main-view-container {
+  padding-top: 20px;
+}
+.main-actions-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #FFF6B2;
-  padding: 12px 30px;
-  border-bottom: 4px solid #594542;
+  gap: 20px;
+  margin-bottom: 30px;
 }
-
-.logo-box {
-  background-color: #FA2700;
-  color: white;
-  padding: 8px 20px;
-  font-weight: 900;
-  font-size: 1.3rem;
-  border-radius: 8px;
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+.clickable-card {
   cursor: pointer;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
-
-.search-wrapper {
-  display: flex;
-  align-items: center;
-  background-color: #FA2700;
-  padding: 6px 10px;
-  border-radius: 10px;
-  width: 45%;
-  max-width: 600px;
+.clickable-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
-
-.search-input {
-  flex: 1;
-  border: none;
-  background-color: #FF6B52;
-  padding: 8px 14px;
-  border-radius: 6px;
-  color: white;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.search-input::placeholder {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.search-input:focus {
-  outline: none;
-  background-color: #ff7b63;
-}
-
-.search-btn {
-  background: none;
-  border: none;
-  color: #594542;
-  cursor: pointer;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  width: 22px;
-  height: 22px;
-}
-
-.controls-group {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.btn-nav-badge {
-  background-color: #FA2700;
-  border: none;
-  border-radius: 10px;
-  width: 65px;
-  height: 60px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: transform 0.1s;
-}
-
-.btn-nav-badge:hover {
-  transform: scale(1.04);
-}
-
-.icon-circle {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.location-purple {
-  background-color: #5E5CC6;
-  color: white;
-}
-
-.account-lavender {
-  background-color: #E2D9FF;
-  color: #5E5CC6;
-}
-
-.badge-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.badge-text {
-  color: white;
-  font-size: 0.72rem;
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 36px;
+  background: #fff7e4;
+  border: 3px dashed var(--brand-brown);
+  border-radius: 24px;
+  color: #6d4b32;
   font-weight: bold;
+  text-align: center;
+}
+
+.btn-new-product {
+  background: var(--brand-orange);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: auto;
+  transition: opacity 0.2s;
+}
+
+.admin-toggle {
+  margin-bottom: 16px;
+}
+
+.check-no-disponibles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-no-disponibles input {
+  cursor: pointer;
 }
 </style>
