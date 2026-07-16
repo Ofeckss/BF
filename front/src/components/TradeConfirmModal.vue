@@ -109,6 +109,14 @@
       </template>
 
     </div>
+
+    <RatingModal
+      v-if="mostrarRating"
+      ref="ratingModalRef"
+      :nombre-otro="nombreOtro"
+      @rate="enviarCalificacion"
+      @close="mostrarRating = false"
+    />
   </div>
 </template>
 
@@ -117,11 +125,17 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../stores/authStore'
 import transaccionesApi from '../services/transaccionesApi'
 import productosApi from '../services/productosApi'
+import usuariosApi from '../services/usuariosApi'
 import pagosApi from '../services/pagosApi'
+import * as sendbirdApi from '../services/sendbirdApi'
+import RatingModal from './RatingModal.vue'
 
 const props = defineProps({
   chatId: { type: String, required: true },
-  articuloId: { type: String, required: true }
+  articuloId: { type: String, required: true },
+  // Necesario para el rating: cuando quien confirma es el vendedor, es la
+  // única forma de saber quién es el comprador (el backend no lo guarda).
+  channelUrl: { type: String, default: null }
 })
 const emit = defineEmits(['close'])
 
@@ -137,6 +151,14 @@ const tratoCompletado = ref(false) // true cuando /transacciones/status confirma
 const esVendedor = ref(false)
 const nombreOtro = ref('el otro usuario')
 const precioOferta = ref(null)
+const vendedorIdRef = ref(null) // dueño del artículo principal (viene del articulo, siempre disponible)
+
+// --- Rating post-trato ---
+const mostrarRating = ref(false)
+const ratingModalRef = ref(null)
+const otroUserIdParaRating = ref(null)
+
+const claveRatingLocal = () => `bartify_rated_${props.chatId}_${auth.user.id}`
 
 const sanitizePrecioOfertaInput = (event) => {
   const raw = event.target.value || ''
@@ -205,6 +227,7 @@ async function cargarTodo() {
 
     const articuloPrincipal = artRes.data
     const vendedorId = articuloPrincipal.vendedorId || articuloPrincipal.vendedor?.vendedorId
+    vendedorIdRef.value = vendedorId
     esVendedor.value = String(vendedorId) === String(auth.user.id)
 
     misArticulosPublicados.value = (misRes.data || []).map(a => ({
@@ -321,19 +344,72 @@ async function verificarStatus() {
       tratoCompletado.value = true
       if (pollingInterval) clearInterval(pollingInterval)
       if (statusPollingInterval) clearInterval(statusPollingInterval)
+      await intentarMostrarRating()
     }
   } catch (e) {
     console.warn('[verificarStatus] error esperado hasta que backend arregle el endpoint:', e.response?.status, e.response?.data)
   }
 }
 
+// Resuelve el id del usuario a calificar (el "otro"):
+// - Si yo soy comprador, el vendedor es el dueño del artículo principal
+//   (siempre lo tenemos, viene de productosApi.getById).
+// - Si yo soy vendedor, el backend NO guarda el compradorId en ningún lado
+//   (Transaccion, Chat, DetalleTransaccion no lo tienen), así que la única
+//   forma de saberlo sin tocar el backend es preguntarle a Sendbird quién
+//   más está en el canal.
+async function resolverOtroUsuarioId() {
+  if (otroUserIdParaRating.value) return otroUserIdParaRating.value
+
+  if (!esVendedor.value) {
+    otroUserIdParaRating.value = vendedorIdRef.value
+  } else if (props.channelUrl) {
+    otroUserIdParaRating.value = await sendbirdApi.getOtroMiembro(props.channelUrl, auth.user.id)
+  }
+
+  return otroUserIdParaRating.value
+}
+
+// Se dispara al detectar que ambos confirmaron. No se muestra si ya se
+// calificó este trato antes (bandera local, ya que el backend solo guarda
+// un promedio agregado por usuario, no calificaciones individuales por
+// transacción) o si no se pudo resolver a quién calificar.
+async function intentarMostrarRating() {
+  if (localStorage.getItem(claveRatingLocal())) return
+
+  const otroId = await resolverOtroUsuarioId()
+  if (otroId) mostrarRating.value = true
+}
+
+async function enviarCalificacion(valor) {
+  const otroId = otroUserIdParaRating.value
+  if (!otroId) {
+    mostrarRating.value = false
+    return
+  }
+  try {
+    await usuariosApi.rate(otroId, valor)
+    localStorage.setItem(claveRatingLocal(), '1')
+    mostrarRating.value = false
+  } catch (e) {
+    console.error('No se pudo enviar la calificación:', e)
+    ratingModalRef.value?.marcarError('No se pudo enviar la calificación. Intenta de nuevo.')
+  }
+}
+
 onMounted(async () => {
   console.log('[TradeConfirmModal] montado con chatId:', props.chatId, '| articuloId:', props.articuloId)
   await cargarTodo()
+  // Chequeo inmediato: si el trato ya estaba completado antes de abrir el
+  // modal (ej. lo cerraste y lo vuelves a abrir), no esperamos 10s para
+  // enterarnos y ofrecer el rating.
+  await verificarStatus()
   // refresca lo que agrega el otro usuario. 7s en vez de 4s para no saturar
   // el backend con más polling encima del que ya hace el chat de mensajes.
   pollingInterval = setInterval(refrescarDetalles, 10000)
-  statusPollingInterval = setInterval(verificarStatus, 10000)
+  if (!tratoCompletado.value) {
+    statusPollingInterval = setInterval(verificarStatus, 10000)
+  }
 })
 
 onUnmounted(() => {

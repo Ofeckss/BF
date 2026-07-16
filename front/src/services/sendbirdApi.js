@@ -35,3 +35,28 @@ export async function sendMessage(channelUrl, userId, message, opts = {}) {
   })
   return await res.json()
 }
+
+// Trae los miembros (participantes) de un canal de Sendbird.
+// Esto existe porque el backend .NET NO guarda el compradorId en ninguna
+// tabla (Transaccion, Chat, DetalleTransaccion, etc. solo guardan ChatId /
+// vendedorId vía el artículo). El canal de Sendbird sí sabe quiénes están
+// en la conversación, así que usamos esto como fuente de verdad para
+// resolver "quién es el comprador" sin tocar el backend.
+export async function getMiembros(channelUrl) {
+  const res = await fetch(`${BASE}/group_channels/${channelUrl}/members`, { headers })
+  const data = await res.json()
+  return data.members || []
+}
+
+// Regresa el user_id del OTRO participante del canal (distinto a miUserId).
+// Devuelve null si no se pudo resolver (canal con un solo miembro, error de red, etc.)
+export async function getOtroMiembro(channelUrl, miUserId) {
+  try {
+    const miembros = await getMiembros(channelUrl)
+    const otro = miembros.find(m => String(m.user_id) !== String(miUserId))
+    return otro ? otro.user_id : null
+  } catch (e) {
+    console.warn('No se pudo obtener el otro miembro del canal de Sendbird:', e)
+    return null
+  }
+}

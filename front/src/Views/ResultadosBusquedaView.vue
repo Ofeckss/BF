@@ -52,19 +52,25 @@
       <div class="filtro-grupo">
         <h4>Categoría</h4>
         <ul class="filtro-lista">
-          <li
-            :class="{ activo: categoriaSeleccionada === null }"
-            @click="seleccionarCategoria(null)"
+          <li 
+            class="categoria-item"
+            :class="{ activo: categoriasSeleccionadas.length === 0 }"
+            @click="limpiarCategorias"
           >
             Todas
           </li>
           <li
             v-for="cat in productosStore.categorias"
             :key="cat.id"
-            :class="{ activo: categoriaSeleccionada === cat.id }"
-            @click="seleccionarCategoria(cat.id)"
+            class="categoria-checkbox-item"
           >
-            {{ cat.nombre }}
+            <input
+              type="checkbox"
+              :id="`cat-${cat.id}`"
+              :checked="categoriasSeleccionadas.includes(cat.id)"
+              @change="toggleCategoria(cat.id)"
+            />
+            <label :for="`cat-${cat.id}`">{{ cat.nombre }}</label>
           </li>
         </ul>
       </div>
@@ -159,7 +165,7 @@ const mostrarNoDisponibles = ref(false)
 // Filtros de la sidebar
 const precioMin = ref(null)
 const precioMax = ref(null)
-const categoriaSeleccionada = ref(null)
+const categoriasSeleccionadas = ref([]) // Ahora es un array para múltiples selecciones
 const ubicacionSeleccionada = ref(null)
 const tipoTransaccion = ref(null) // null = todos, true = trueque, false = venta
 const ubicaciones = ref([])
@@ -170,7 +176,7 @@ const mostrarFiltroPrecio = computed(() => tipoTransaccion.value !== true)
 const hayFiltrosActivos = computed(() =>
   precioMin.value !== null ||
   precioMax.value !== null ||
-  categoriaSeleccionada.value !== null ||
+  categoriasSeleccionadas.value.length > 0 ||
   ubicacionSeleccionada.value !== null ||
   tipoTransaccion.value !== null
 )
@@ -185,15 +191,44 @@ const resultadosFiltrados = computed(() => {
   return productosStore.searchResults.filter((p) => p.status === 'Disponible')
 })
 
-const buscar = () => {
-  productosStore.searchArticulos({
-    Nombre: query.value || null,
-    PrecioMin: mostrarFiltroPrecio.value ? precioMin.value ?? null : null,
-    PrecioMax: mostrarFiltroPrecio.value ? precioMax.value ?? null : null,
-    CategoriaId: categoriaSeleccionada.value,
-    UbicacionId: ubicacionSeleccionada.value,
-    EsTrueque: tipoTransaccion.value
-  })
+const buscar = async () => {
+  // Si hay múltiples categorías seleccionadas, hacer búsquedas por cada una y combinar resultados
+  if (categoriasSeleccionadas.value.length > 0) {
+    const todosResultados = []
+    const idsVistos = new Set()
+
+    for (const catId of categoriasSeleccionadas.value) {
+      await productosStore.searchArticulos({
+        Nombre: query.value || null,
+        PrecioMin: mostrarFiltroPrecio.value ? precioMin.value ?? null : null,
+        PrecioMax: mostrarFiltroPrecio.value ? precioMax.value ?? null : null,
+        CategoriaId: catId,
+        UbicacionId: ubicacionSeleccionada.value,
+        EsTrueque: tipoTransaccion.value
+      })
+
+      // Agregar resultados sin duplicados
+      productosStore.searchResults.forEach(resultado => {
+        if (!idsVistos.has(resultado.id)) {
+          idsVistos.add(resultado.id)
+          todosResultados.push(resultado)
+        }
+      })
+    }
+
+    // Reemplazar los resultados con todos combinados
+    productosStore.searchResults = todosResultados
+  } else {
+    // Si no hay categorías seleccionadas, búsqueda normal sin filtro de categoría
+    productosStore.searchArticulos({
+      Nombre: query.value || null,
+      PrecioMin: mostrarFiltroPrecio.value ? precioMin.value ?? null : null,
+      PrecioMax: mostrarFiltroPrecio.value ? precioMax.value ?? null : null,
+      CategoriaId: null,
+      UbicacionId: ubicacionSeleccionada.value,
+      EsTrueque: tipoTransaccion.value
+    })
+  }
 }
 
 const seleccionarTipo = (valor) => {
@@ -206,8 +241,18 @@ const seleccionarTipo = (valor) => {
   buscar()
 }
 
-const seleccionarCategoria = (id) => {
-  categoriaSeleccionada.value = categoriaSeleccionada.value === id ? null : id
+const toggleCategoria = (id) => {
+  const idx = categoriasSeleccionadas.value.indexOf(id)
+  if (idx > -1) {
+    categoriasSeleccionadas.value.splice(idx, 1)
+  } else {
+    categoriasSeleccionadas.value.push(id)
+  }
+  buscar()
+}
+
+const limpiarCategorias = () => {
+  categoriasSeleccionadas.value = []
   buscar()
 }
 
@@ -219,7 +264,7 @@ const seleccionarUbicacion = (id) => {
 const limpiarFiltros = () => {
   precioMin.value = null
   precioMax.value = null
-  categoriaSeleccionada.value = null
+  categoriasSeleccionadas.value = []
   ubicacionSeleccionada.value = null
   tipoTransaccion.value = null
   buscar()
@@ -331,6 +376,30 @@ watch(query, buscar)
   background: #fdecec;
   color: var(--brand-red, #e63946);
   font-weight: 600;
+}
+
+.categoria-item:hover {
+  background: #f5f5f5;
+  cursor: pointer;
+}
+
+.categoria-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  list-style: none;
+}
+
+.categoria-checkbox-item input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.categoria-checkbox-item label {
+  cursor: pointer;
+  flex: 1;
 }
 
 .btn-limpiar-filtros {

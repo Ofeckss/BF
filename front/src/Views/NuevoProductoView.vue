@@ -102,7 +102,7 @@
 
         <p v-if="error" class="error-msg">{{ error }}</p>
 
-        <button class="btn-publish" :disabled="loading" @click="handleSubmit">
+        <button class="btn-publish" :disabled="loading || (!esEdicion && !previewUrl)" @click="handleSubmit">
           {{ loading ? (esEdicion ? 'Guardando...' : 'Publicando...') : (esEdicion ? 'Guardar cambios' : 'Publicar Producto') }}
         </button>
       </div>
@@ -244,6 +244,10 @@ const handleSubmit = async () => {
   if (!form.ubicacionId) { error.value = 'Selecciona una ubicación'; return }
   if (form.description.trim().length > MAX_DESCRIPTION_LENGTH) {
     error.value = `La descripción no puede tener más de ${MAX_DESCRIPTION_LENGTH} caracteres.`
+    return
+  }
+  if (!esEdicion.value && !selectedFile.value) {
+    error.value = 'Debes subir una imagen del producto.'
     return
   }
 

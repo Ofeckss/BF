@@ -163,7 +163,15 @@
       v-if="mostrarModalFinalizar && chatActivo?.chatId"
       :chat-id="chatActivo.chatId"
       :articulo-id="chatActivo.articuloId"
+      :channel-url="chatActivo.channelUrl"
       @close="mostrarModalFinalizar = false"
+    />
+
+    <RatingModal
+      v-if="ratingPostPago"
+      :nombre-otro="ratingPostPago.nombreOtro"
+      @rate="enviarCalificacionPostPago"
+      @close="ratingPostPago = null"
     />
   </div>
 </template>
@@ -175,9 +183,11 @@ import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
 import ChatCard from '../components/ChatCard.vue'
 import TradeConfirmModal from '../components/TradeConfirmModal.vue'
+import RatingModal from '../components/RatingModal.vue'
 import * as sendbirdApi from '../services/sendbirdApi'
 import transaccionesApi from '../services/transaccionesApi'
 import productosApi from '../services/productosApi'
+import usuariosApi from '../services/usuariosApi'
 
 const auth = useAuthStore()
 const chatStore = useChatStore()
@@ -190,6 +200,7 @@ const nuevoMensaje = ref('')
 const messagesRef = ref(null)
 const mostrarModalFinalizar = ref(false)
 const avisoPago = ref(null)
+const ratingPostPago = ref(null) // { otroUserId, nombreOtro, chatId } o null
 let pollingInterval = null
 
 // --- Ofrecer un artículo en el chat ---
@@ -213,6 +224,9 @@ async function inicializarChats() {
       if (pagoDesdeUrl === 'exitoso' || pagoDesdeUrl === 'cancelado') {
         avisoPago.value = { tipo: pagoDesdeUrl }
         setTimeout(() => { avisoPago.value = null }, 6000)
+        if (pagoDesdeUrl === 'exitoso') {
+          await intentarMostrarRatingPostPago(canalPorPago)
+        }
       }
       return
     } else {
@@ -242,6 +256,42 @@ async function inicializarChats() {
       chats.value.unshift(nuevo)
       await abrirChat(nuevo)
     }
+  }
+}
+
+const claveRatingLocal = (chatId) => `bartify_rated_${chatId}_${auth.user.id}`
+
+// Solo aplica al comprador: es quien vuelve de Stripe. El vendedor de una
+// venta califica al comprador desde su propio TradeConfirmModal cuando
+// verificarStatus detecta que el trato se completó (ver ese componente).
+async function intentarMostrarRatingPostPago(canal) {
+  if (!canal?.chatId || localStorage.getItem(claveRatingLocal(canal.chatId))) return
+
+  try {
+    const artRes = await productosApi.getById(canal.articuloId)
+    const vendedorId = artRes.data?.vendedorId || artRes.data?.vendedor?.vendedorId
+    if (!vendedorId || String(vendedorId) === String(auth.user.id)) return
+
+    ratingPostPago.value = {
+      chatId: canal.chatId,
+      otroUserId: vendedorId,
+      nombreOtro: canal.vendedorNombre || 'el vendedor'
+    }
+  } catch (e) {
+    console.warn('No se pudo resolver el vendedor para calificar:', e)
+  }
+}
+
+async function enviarCalificacionPostPago(valor) {
+  const info = ratingPostPago.value
+  if (!info) return
+  try {
+    await usuariosApi.rate(info.otroUserId, valor)
+    localStorage.setItem(claveRatingLocal(info.chatId), '1')
+  } catch (e) {
+    console.error('No se pudo enviar la calificación:', e)
+  } finally {
+    ratingPostPago.value = null
   }
 }
 
