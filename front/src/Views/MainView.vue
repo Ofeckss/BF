@@ -63,8 +63,12 @@ const puedeGestionar = computed(() => auth.esAdmin)
 const mostrarNoDisponibles = ref(false)
 
 const resultadosFiltrados = computed(() => {
-  if (mostrarNoDisponibles.value) return productosStore.products
-  return productosStore.products.filter((p) => p.status === 'Disponible')
+  const misArticulosExcluidos = productosStore.products.filter(
+    (p) => String(p.vendedor_id) !== String(auth.user?.id)
+  )
+
+  if (mostrarNoDisponibles.value) return misArticulosExcluidos
+  return misArticulosExcluidos.filter((p) => p.status === 'Disponible')
 })
 
 //const products = computed(() => productosStore.products)
