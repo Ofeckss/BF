@@ -7,45 +7,68 @@
         <h2>Artículos publicados</h2>
         <p>Revisa los artículos disponibles y haz clic en cualquiera para ver los detalles.</p>
       </div>
-      <button class="btn-new-product" @click="router.push('/nuevo-articulo')">
-        Publicar artículo
-      </button>
+        <button class="btn-new-product" @click="router.push('/nuevo-articulo')">
+          Publicar artículo
+        </button>
     </div>
-
-    <div class="products-grid">
-      <ProductCard
-        v-for="product in productsDisponibles"
-        :key="product.id"
-        :title="product.title"
-        :location="product.ubicacion"
-        :price="product.price"
-        :status="product.status"
-        :tags="product.tags"
-        :image="product.image"
-        :es-trueque="product.esTrueque"
-        class="clickable-card"
-        @click="goToProduct(product.id)"
-      />
-
-      <div v-if="productsDisponibles.length === 0" class="empty-state">
+      <div v-if="puedeGestionar" class="admin-toggle">
+        <label class="check-no-disponibles">
+          <input type="checkbox" v-model="mostrarNoDisponibles" />
+          Mostrar artículos no disponibles
+        </label>
+      </div>
+ 
+      <p v-if="productosStore.loading" class="estado-msg">Buscando artículos...</p>
+ 
+      <p v-else-if="productosStore.error" class="estado-msg">
+        {{ productosStore.error }}
+      </p>
+ 
+      <div v-else-if="resultadosFiltrados.length === 0" class="empty-state">
         No hay artículos publicados todavía. Crea uno nuevo para verlo aquí.
       </div>
-    </div>
+ 
+      <div v-else class="products-grid">
+        <ProductCard
+          v-for="product in resultadosFiltrados"
+          :key="product.id"
+          :title="product.title"
+          :location="product.location"
+          :price="product.price"
+          :status="product.status"
+          :tags="product.tags"
+          :image="product.image"
+          :es-trueque="product.esTrueque"
+          class="clickable-card"
+          @click="goToProduct(product.id)"
+        />
+      </div>
   </div>
+
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProductosStore } from '../stores/productosStore'
+import { useAuthStore } from '../stores/authStore'
 import HeroBanner from '../components/HeroBanner.vue'
 import ProductCard from '../components/ProductCard.vue'
 
 const router = useRouter()
 const productosStore = useProductosStore()
+const auth = useAuthStore()
 
-const products = computed(() => productosStore.products)
-const productsDisponibles = computed(() => products.value.filter(p => p.status === 'Disponible'))
+const puedeGestionar = computed(() => auth.esAdmin)
+const mostrarNoDisponibles = ref(false)
+
+const resultadosFiltrados = computed(() => {
+  if (mostrarNoDisponibles.value) return productosStore.products
+  return productosStore.products.filter((p) => p.status === 'Disponible')
+})
+
+//const products = computed(() => productosStore.products)
+//const productsDisponibles = computed(() => products.value.filter(p => p.status === 'Disponible'))
 
 const goToProduct = (productId) => {
   router.push({ name: 'articulo', params: { id: productId } })
@@ -102,5 +125,23 @@ onMounted(() => {
   cursor: pointer;
   width: auto;
   transition: opacity 0.2s;
+}
+
+.admin-toggle {
+  margin-bottom: 16px;
+}
+
+.check-no-disponibles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-no-disponibles input {
+  cursor: pointer;
 }
 </style>

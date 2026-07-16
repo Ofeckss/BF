@@ -105,11 +105,12 @@
           Resultados para "{{ query }}"
           <span class="resultados-count">({{ resultadosFiltrados.length }})</span>
         </h2>
-
-        <label class="check-no-disponibles">
-          <input type="checkbox" v-model="mostrarNoDisponibles" />
-          Mostrar no disponibles (esta opcion se eliminara en la version final)
-        </label>
+        <div v-if="puedeGestionar">
+          <label class="check-no-disponibles">
+            <input type="checkbox" v-model="mostrarNoDisponibles" />
+            Mostrar artículos no disponibles
+          </label>
+        </div>
       </div>
 
       <p v-if="productosStore.searchLoading" class="estado-msg">Buscando artículos...</p>
@@ -145,13 +146,16 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductosStore } from '../stores/productosStore'
+import { useAuthStore } from '../stores/authStore'
 import productosApi from '../services/productosApi'
 import ProductCard from '../components/ProductCard.vue'
 
 const route = useRoute()
 const router = useRouter()
 const productosStore = useProductosStore()
+const auth = useAuthStore()
 
+const puedeGestionar = computed(() => auth.esAdmin)
 const query = computed(() => route.query.q || '')
 
 const mostrarNoDisponibles = ref(false)

@@ -9,5 +9,8 @@ export default {
     },
     update(id, payload){
         return conectarApi.patch(`/api/usuarios/${id}/update`, payload)
+    },
+    deleteUsuario(id){
+        return conectarApi.delete(`/api/usuarios/${id}/delete`)
     }
 }
