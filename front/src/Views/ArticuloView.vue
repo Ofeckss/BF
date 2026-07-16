@@ -24,6 +24,8 @@ const esDueño = computed(() => {
   return auth.isLoggedIn && vendedorId && String(vendedorId) === String(auth.user.id)
 })
 
+const puedeGestionar = computed(() => esDueño.value || auth.esAdmin)
+
 const confirmarEliminar = async () => {
   if (!confirm('¿Seguro que quieres eliminar este artículo? Esta acción no se puede deshacer.')) return
   eliminando.value = true
@@ -139,7 +141,7 @@ const iniciarCompra = async () => {
             class="display-img" 
           />
         </div>
-        <div v-if="esDueño && articulo.disponible" class="owner-actions">
+        <div v-if="puedeGestionar && articulo.disponible" class="owner-actions">
           <button class="btn-editar-articulo" @click="router.push(`/editar-articulo/${route.params.id}`)">
             Editar producto
           </button>

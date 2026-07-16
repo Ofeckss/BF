@@ -12,6 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthChecked = ref(false)
 
   const isLoggedIn = computed(() => !!user.value)
+  const esAdmin = computed(() => user.value?.rol === 3)
   const userEmail = computed(() => user.value?.email || '')
 
   const registerUser = async (name, email, password, rol) => {
@@ -39,7 +40,11 @@ export const useAuthStore = defineStore('auth', () => {
       const userData = {
         id: response.data.id,
         email: response.data.email,
-        name: response.data.nombre
+        name: response.data.nombre,
+        apellido: response.data.apellido,
+        fechaN: response.data.fecha_nacimiento,
+        telefono: response.data.numero_cel,
+        rol: response.data.rol
       }
 
       user.value = userData
@@ -70,8 +75,12 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await conectarApi.get('/api/auth/me')
       const userData = {
         id: response.data.id,
-        email: response.data.email,
-        name: response.data.nombre
+        email: user.value?.email || response.data.email,
+        name: response.data.nombre,
+        apellido: response.data.apellido,
+        fechaN: response.data.fecha_nacimiento,
+        telefono: response.data.numero_cel,
+        rol: response.data.rol
       }
       user.value = userData
       localStorage.setItem('user', JSON.stringify(userData))
@@ -105,5 +114,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user')
   }
 
-  return { user, isLoading, isLoggedIn, isAuthChecked, checkAuthToken, userEmail, registerUser, loginUser, logout }
+  return { user, isLoading, isLoggedIn, isAuthChecked, esAdmin, checkAuthToken, userEmail, registerUser, loginUser, logout }
 })

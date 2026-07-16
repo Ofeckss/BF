@@ -2,12 +2,15 @@
 import { reactive, ref } from 'vue' 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
+import TerminosModal from './TerminosModal.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 
 const isLoading = ref(false)
+const aceptaTerminos = ref(false)
+const mostrarTerminos = ref(false)
 
 const registerForm = reactive({
   name: '',
@@ -16,6 +19,8 @@ const registerForm = reactive({
 })
 
 const handleRegister = async () => {
+  if (!aceptaTerminos.value) return
+
   isLoading.value = true 
   try {
 
@@ -54,10 +59,18 @@ const handleRegister = async () => {
           <input type="password" id="password" v-model="registerForm.password" class="form-input" required />
         </div>
         
+        <label class="terminos-check">
+          <input type="checkbox" v-model="aceptaTerminos" required />
+          <span>
+            Acepto los
+            <a href="#" @click.prevent="mostrarTerminos = true">términos y condiciones</a>
+          </span>
+        </label>
+
         <button 
           type="submit" 
           class="btn-orange" 
-          :disabled="isLoading"
+          :disabled="isLoading || !aceptaTerminos"
         >
           {{ isLoading ? 'Procesando...' : 'Registrarse' }}
         </button>
@@ -71,6 +84,8 @@ const handleRegister = async () => {
         Explorar sin cuenta
       </button>
     </div>
+
+    <TerminosModal v-if="mostrarTerminos" @close="mostrarTerminos = false" />
   </div>
 </template>
 
@@ -144,6 +159,35 @@ const handleRegister = async () => {
 .form-input:focus {
   outline: none;
   border-color: var(--brand-orange);
+}
+
+.terminos-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #555555;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.terminos-check input[type="checkbox"] {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  accent-color: #FA2700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.terminos-check a {
+  color: var(--brand-orange);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.terminos-check a:hover {
+  text-decoration: underline;
 }
 
 .btn-orange {

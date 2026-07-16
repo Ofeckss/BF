@@ -7,6 +7,12 @@
       <h2 class="user-name">{{ auth.user?.name || 'Usuario' }}</h2>
       <!--<p class="user-since">Miembro desde {{ memberSince }}</p>-->
 
+      <div v-if="ratingPromedio !== null" class="rating-display">
+        <span class="rating-star">★</span>
+        <span class="rating-value">{{ ratingPromedio.toFixed(1) }}</span>
+      </div>
+      <div v-else class="rating-display muted">Sin calificaciones aún</div>
+
       <ul class="user-details">
         <li>
           <svg viewBox="0 0 24 24" fill="none"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill="currentColor"/></svg>
@@ -112,6 +118,7 @@ import { useProductosStore } from '../stores/productosStore'
 import { useHistorialStore } from '../stores/historialStore'
 import ProductCard from '../components/ProductCard.vue'
 import productosApi from '../services/productosApi'
+import usuariosApi from '../services/usuariosApi'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -122,6 +129,8 @@ const misArticulos = ref([])
 const loadingArticulos = ref(false)
 const trueques = ref(0)
 const ventas = ref(0)
+// auth.user (login / /api/auth/me) no trae el Rating, hay que pedirlo aparte.
+const ratingPromedio = ref(null)
 
 const historial = computed(() => historialStore.historial)
 
@@ -138,6 +147,14 @@ const memberSince = computed(() => {
 
 onMounted(async () => {
   if (!auth.user?.id) return
+
+  usuariosApi.getById(auth.user.id)
+    .then(res => {
+      const r = res.data?.rating ?? res.data?.Rating ?? null
+      ratingPromedio.value = r === null ? null : Number(r)
+    })
+    .catch(e => console.warn('No se pudo cargar el rating del usuario:', e))
+
   loadingArticulos.value = true
   try {
     const res = await productosApi.getByUsuarioId(auth.user.id)
@@ -219,6 +236,28 @@ onMounted(async () => {
   font-size: 0.78rem;
   color: #888;
   margin: 0 0 8px;
+}
+
+.rating-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 2px 0 4px;
+}
+
+.rating-display .rating-star {
+  color: #FFC53D;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.rating-display.muted {
+  color: #aaa;
+  font-weight: 600;
+  font-size: 0.8rem;
 }
 
 .user-details {

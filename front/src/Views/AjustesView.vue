@@ -36,6 +36,7 @@
     </section>
 
     <!-- Ubicación -->
+    <!--
     <section class="settings-section">
       <h2>
         <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
@@ -50,8 +51,10 @@
         </div>
       </div>
     </section>
+    -->
 
     <!-- Seguridad -->
+    <!--
     <section class="settings-section">
       <h2>
         <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
@@ -69,15 +72,16 @@
         </div>
       </div>
     </section>
+    -->
 
     <!-- Acciones -->
     <div class="bottom-actions">
       <button class="btn-primary" :disabled="guardando" @click="guardarCambios">
         {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
       </button>
-      <button class="btn-danger-outline" @click="confirmarEliminar">
+      <button class="btn-danger-outline" :disabled="eliminandoCuenta" @click="confirmarEliminar">
         <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
-        Eliminar cuenta
+        {{ eliminandoCuenta ? 'Eliminando...' : 'Eliminar cuenta' }}
       </button>
     </div>
 
@@ -175,10 +179,21 @@ const guardarCambios = async () => {
   passwords.value = { actual: '', nueva: '', confirmar: '' }
 }*/
 
-const confirmarEliminar = () => {
-  if (confirm('¿Seguro que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+const eliminandoCuenta = ref(false)
+
+const confirmarEliminar = async () => {
+  if (!confirm('¿Seguro que quieres eliminar tu cuenta? Esta acción no se puede deshacer.')) return
+
+  eliminandoCuenta.value = true
+  try {
+    await usuariosApi.deleteUsuario(auth.user.id)
     auth.logout()
     router.push('/')
+  } catch (e) {
+    console.error('Error al eliminar la cuenta:', e.response?.data || e)
+    mostrarToast('No se pudo eliminar la cuenta. Intenta de nuevo.', 'error')
+  } finally {
+    eliminandoCuenta.value = false
   }
 }
 </script>

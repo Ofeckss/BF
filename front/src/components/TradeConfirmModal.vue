@@ -89,7 +89,7 @@
           <template v-else-if="yaConfirme && !transaccion?.esTrueque && !esVendedor">
             <button
               class="btn-finalizar-modal"
-              @click="pagarConStripe"
+              @click="iniciarFlujoPago"
               :disabled="procesandoPago"
             >
               {{ procesandoPago ? 'Redirigiendo a Stripe...' : '💳 Pagar con Stripe' }}
@@ -115,7 +115,7 @@
       ref="ratingModalRef"
       :nombre-otro="nombreOtro"
       @rate="enviarCalificacion"
-      @close="mostrarRating = false"
+      @close="cerrarRatingModal"
     />
   </div>
 </template>
@@ -307,6 +307,34 @@ async function cancelarTrato() {
   }
 }
 
+// Se llama al hacer clic en "Pagar con Stripe". Antes de redirigir,
+// le mostramos al comprador el popup de rating (ya tenemos resuelto
+// vendedorIdRef, no hace falta esperar a volver de Stripe ni volver a
+// pedir el artículo). Si ya calificó este trato antes, o no se pudo
+// resolver a quién calificar, se salta directo al pago.
+async function iniciarFlujoPago() {
+  if (localStorage.getItem(claveRatingLocal())) {
+    await pagarConStripe()
+    return
+  }
+  const otroId = await resolverOtroUsuarioId()
+  if (otroId) {
+    mostrarRating.value = true
+  } else {
+    await pagarConStripe()
+  }
+}
+
+// Cierra el modal de rating. Si se disparó desde el flujo pre-pago
+// (comprador, no trueque, trato aún no completado), "Omitir" igual
+// debe mandarlo a pagar.
+function cerrarRatingModal() {
+  mostrarRating.value = false
+  if (!transaccion.value?.esTrueque && !esVendedor.value && !tratoCompletado.value) {
+    pagarConStripe()
+  }
+}
+
 // Dispara el checkout de Stripe. Solo se llama cuando el comprador ya
 // confirmó su precio (PrecioFinal ya está guardado en el backend vía /confirmar),
 // porque PagoService.CrearCheckoutSessionAsync lee ese precio de la transacción
@@ -391,6 +419,11 @@ async function enviarCalificacion(valor) {
     await usuariosApi.rate(otroId, valor)
     localStorage.setItem(claveRatingLocal(), '1')
     mostrarRating.value = false
+    // Si esto vino del flujo pre-pago (comprador, no trueque, aún no
+    // completado), seguimos al checkout de Stripe.
+    if (!transaccion.value?.esTrueque && !esVendedor.value && !tratoCompletado.value) {
+      await pagarConStripe()
+    }
   } catch (e) {
     console.error('No se pudo enviar la calificación:', e)
     ratingModalRef.value?.marcarError('No se pudo enviar la calificación. Intenta de nuevo.')
