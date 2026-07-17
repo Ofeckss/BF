@@ -65,12 +65,12 @@ onMounted(async () => {
     if (auth.isLoggedIn && articulo.value) {
       historialStore.registrarVisita({
         id: String(id),
-        title: articulo.value.Nombre,
-        price: articulo.value.Precio,
-        location: articulo.value.Ubicacion?.Nombre || '',
-        status: articulo.value.Disponible ? 'Disponible' : 'No disponible',
-        esTrueque: articulo.value.EsTrueque,
-        tags: articulo.value.Categoria?.Nombre ? [articulo.value.Categoria.Nombre] : [],
+        title: articulo.value.nombre,
+        price: Number(articulo.value.precio),
+        location: articulo.value.ubicacion?.nombre || '',
+        status: articulo.value.disponible ? 'Disponible' : 'No disponible',
+        esTrueque: articulo.value.esTrueque,
+        tags: articulo.value.categoria?.nombre ? [articulo.value.categoria.nombre] : [],
         image: fotoRes.data?.[0]?.url || ''
       }, auth.user.id)
     }
@@ -166,8 +166,13 @@ const iniciarCompra = async () => {
         </div>
 
         <div class="price-box">
-          <span class="price-label">Precio estimado:</span>
-          <h2 class="price-value">${{ articulo.precio?.toLocaleString('es-MX') ?? 0 }} MXN</h2>
+          <template v-if="articulo.esTrueque">
+            <span class="price-label">🔄 Este artículo es para trueque</span>
+          </template>
+          <template v-else>
+            <span class="price-label">Precio estimado:</span>
+            <h2 class="price-value">${{ articulo.precio?.toLocaleString('es-MX') ?? 0 }} MXN</h2>
+          </template>
         </div>
 
         <div class="tags-row">
@@ -322,6 +327,12 @@ const iniciarCompra = async () => {
   font-size: 0.9rem;
   color: var(--brand-brown);
   font-weight: 600;
+}
+
+.price-box .price-label:only-child {
+  font-size: 1.3rem;
+  color: var(--brand-orange);
+  font-weight: 800;
 }
 
 .price-value {
