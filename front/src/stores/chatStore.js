@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import chatApi from '@/services/chatApi'
 import * as sendbirdApi from '@/services/sendbirdApi'
+import productosApi from '@/services/productosApi'
 
 export const useChatStore = defineStore('chat', () => {
   const channels = ref([])
@@ -12,10 +13,7 @@ export const useChatStore = defineStore('chat', () => {
 
   const espera = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-  // Carga todos los chats del usuario desde el backend.
-  // Reintenta una vez si falla (típico cuando Railway "despierta" el backend
-  // y la primera petición se corta a medias).
-  async function loadChannels() {
+  async function loadChannels(usuarioId) {
     loading.value = true
     loadError.value = ''
     try {
@@ -28,18 +26,20 @@ export const useChatStore = defineStore('chat', () => {
         res = await chatApi.getAll()
       }
 
-      channels.value = res.data.map(ch => ({
+      const base = res.data.map(ch => ({
         id: ch.url,
-        chatId: ch.id, // GUID real del chat en BD, usado por /api/transacciones/*
+        chatId: ch.id,
         channelUrl: ch.url,
         articuloId: ch.articuloPrincipal,
         articuloNombre: ch.nombreArticulo,
         imagen: ch.urlArticulo,
-        vendedorNombre: '', // el backend no lo manda, se puede agregar después si se necesita
+        vendedorNombre: '',
         ultimoMensaje: '',
         hora: '',
         unread: 0
       }))
+
+      channels.value = await Promise.all(base.map(ch => resolverNombreOtro(ch, usuarioId)))
     } catch (err) {
       console.error('No se pudieron cargar los chats:', err)
       loadError.value = 'No se pudieron cargar tus conversaciones. Intenta de nuevo.'
@@ -49,16 +49,35 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  // Crea (o recupera) el chat para un artículo via backend
+  const cleanId = (id) => String(id).replace('@', '_at_').replace(/\./g, '_')
+
+  async function resolverNombreOtro(ch, usuarioId) {
+    if (!usuarioId || !ch.articuloId) return ch
+    try {
+      const artRes = await productosApi.getById(ch.articuloId)
+      const vendedorId = artRes.data?.vendedorId || artRes.data?.vendedor?.vendedorId
+      const esVendedor = String(vendedorId) === String(usuarioId)
+
+      if (!esVendedor) {
+        const v = artRes.data?.vendedor
+        const nombre = v ? `${v.nombre || ''} ${v.apellido || ''}`.trim() : ''
+        return { ...ch, vendedorNombre: nombre || 'Vendedor' }
+      }
+
+      const miembros = await sendbirdApi.getMiembros(ch.channelUrl)
+      const otro = miembros.find(m => String(m.user_id) !== cleanId(usuarioId))
+      return { ...ch, vendedorNombre: otro?.nickname || 'Comprador' }
+    } catch (e) {
+      console.warn('No se pudo resolver con quien es el chat', ch.channelUrl, e)
+      return ch
+    }
+  }
+
   async function openChannelForArticulo({ articuloId, vendedorId, articuloNombre, imagenUrl, sellerNickname, esTrueque }) {
     const res = await chatApi.create(articuloId, vendedorId, articuloNombre, esTrueque)
-    const channelUrl = res.data.url // el backend regresa { url, mensaje }, url = sendbird channel url
+    const channelUrl = res.data.url
 
     activeChannelUrl.value = channelUrl
-    // OJO: el endpoint de creación no regresa el chatId (GUID) del chat recién creado,
-    // solo el url de sendbird. Por eso ChatView vuelve a llamar loadChannels() al montar,
-    // que sí trae el chatId real desde GET /api/chats. Hasta que eso pase, "Finalizar trato"
-    // debe quedar deshabilitado para chats nuevos que aún no tienen chatId.
     activeChannel.value = { articuloNombre, imagen: imagenUrl, vendedorNombre: sellerNickname, articuloId, chatId: null }
     return channelUrl
   }

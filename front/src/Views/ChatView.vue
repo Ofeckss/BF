@@ -13,13 +13,13 @@
         {{ chatStore.loadError }}
         <button class="btn-reintentar" @click="recargarChats">Reintentar</button>
       </div>
-      <div v-else-if="chats.length === 0" class="sidebar-empty">
+      <div v-else-if="chatsVisibles.length === 0" class="sidebar-empty">
         No tienes conversaciones aún.
       </div>
 
       <div class="chat-list">
         <ChatCard
-          v-for="chat in chats"
+          v-for="chat in chatsActivos"
           :key="chat.id"
           :articuloNombre="chat.articuloNombre"
           :vendedorNombre="chat.vendedorNombre"
@@ -28,8 +28,36 @@
           :hora="chat.hora"
           :unread="chat.unread"
           :isActive="chatActivo?.id === chat.id"
+          :isArchived="false"
           @select="abrirChat(chat)"
+          @archive="archivarChat(chat)"
+          @delete="eliminarChat(chat)"
         />
+      </div>
+
+      <div v-if="chatsArchivados.length > 0" class="archivados-section">
+        <button class="archivados-toggle" @click="mostrarArchivados = !mostrarArchivados">
+          <span>Archivados ({{ chatsArchivados.length }})</span>
+          <span class="archivados-caret" :class="{ open: mostrarArchivados }">▾</span>
+        </button>
+
+        <div v-if="mostrarArchivados" class="chat-list">
+          <ChatCard
+            v-for="chat in chatsArchivados"
+            :key="chat.id"
+            :articuloNombre="chat.articuloNombre"
+            :vendedorNombre="chat.vendedorNombre"
+            :imagen="chat.imagen"
+            :ultimoMensaje="chat.ultimoMensaje"
+            :hora="chat.hora"
+            :unread="chat.unread"
+            :isActive="chatActivo?.id === chat.id"
+            :isArchived="true"
+            @select="abrirChat(chat)"
+            @unarchive="desarchivarChat(chat)"
+            @delete="eliminarChat(chat)"
+          />
+        </div>
       </div>
     </aside>
 
@@ -84,7 +112,15 @@
             :key="msg.id"
             :class="['msg-bubble', msg.esMio ? 'msg-mio' : 'msg-otro']"
           >
-            <div v-if="msg.esOferta" class="oferta-card">
+            <div
+              v-if="msg.esOferta"
+              class="oferta-card"
+              role="button"
+              tabindex="0"
+              title="Ver artículo completo"
+              @click="irAlArticulo(msg.oferta.articuloId)"
+              @keydown.enter="irAlArticulo(msg.oferta.articuloId)"
+            >
               <img v-if="msg.oferta.url" :src="msg.oferta.url" class="oferta-card-thumb" />
               <div v-else class="oferta-card-thumb placeholder"></div>
               <div class="oferta-card-body">
@@ -177,8 +213,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
 import ChatCard from '../components/ChatCard.vue'
@@ -192,9 +228,20 @@ import usuariosApi from '../services/usuariosApi'
 const auth = useAuthStore()
 const chatStore = useChatStore()
 const route = useRoute()
+const router = useRouter()
 
 const chats = ref([])
 const chatActivo = ref(null)
+
+// --- Archivar / eliminar chats ---
+// Se guarda localmente (por usuario) igual que la bandera de "ya calificado".
+// No requiere cambios de backend: es una preferencia de vista, no un dato
+// que el otro usuario necesite ver. Se identifica cada chat por channelUrl
+// porque es el único id que siempre está disponible (chatId a veces tarda
+// en sincronizarse).
+const archivadosIds = ref(new Set())
+const eliminadosIds = ref(new Set())
+const mostrarArchivados = ref(false)
 const mensajes = ref([])
 const nuevoMensaje = ref('')
 const messagesRef = ref(null)
@@ -261,6 +308,68 @@ async function inicializarChats() {
 
 const claveRatingLocal = (chatId) => `bartify_rated_${chatId}_${auth.user.id}`
 
+const claveArchivados = () => `bartify_chats_archivados_${auth.user.id}`
+const claveEliminados = () => `bartify_chats_eliminados_${auth.user.id}`
+
+function cargarArchivadosYEliminados() {
+  try {
+    archivadosIds.value = new Set(JSON.parse(localStorage.getItem(claveArchivados()) || '[]'))
+  } catch (e) {
+    archivadosIds.value = new Set()
+  }
+  try {
+    eliminadosIds.value = new Set(JSON.parse(localStorage.getItem(claveEliminados()) || '[]'))
+  } catch (e) {
+    eliminadosIds.value = new Set()
+  }
+}
+
+function guardarArchivados() {
+  localStorage.setItem(claveArchivados(), JSON.stringify(Array.from(archivadosIds.value)))
+}
+
+function guardarEliminados() {
+  localStorage.setItem(claveEliminados(), JSON.stringify(Array.from(eliminadosIds.value)))
+}
+
+function archivarChat(chat) {
+  archivadosIds.value = new Set(archivadosIds.value).add(chat.channelUrl)
+  guardarArchivados()
+}
+
+function desarchivarChat(chat) {
+  const nuevo = new Set(archivadosIds.value)
+  nuevo.delete(chat.channelUrl)
+  archivadosIds.value = nuevo
+  guardarArchivados()
+}
+
+// "Eliminar" solo la quita de TU bandeja (localStorage); no borra los
+// mensajes de Sendbird ni afecta lo que ve el otro usuario. Es la opción
+// segura sin tener que agregar un endpoint nuevo en el backend.
+function eliminarChat(chat) {
+  const confirmado = confirm(
+    `¿Eliminar la conversación sobre "${chat.articuloNombre}" con ${chat.vendedorNombre}? Esto solo la quita de tu bandeja, no borra los mensajes.`
+  )
+  if (!confirmado) return
+
+  const nuevoElim = new Set(eliminadosIds.value).add(chat.channelUrl)
+  eliminadosIds.value = nuevoElim
+  guardarEliminados()
+
+  if (archivadosIds.value.has(chat.channelUrl)) desarchivarChat(chat)
+
+  if (chatActivo.value?.channelUrl === chat.channelUrl) {
+    chatActivo.value = null
+    if (pollingInterval) clearInterval(pollingInterval)
+  }
+}
+
+// Chats visibles (sin los "eliminados"), separados en activos/archivados
+const chatsVisibles = computed(() => chats.value.filter(c => !eliminadosIds.value.has(c.channelUrl)))
+const chatsActivos = computed(() => chatsVisibles.value.filter(c => !archivadosIds.value.has(c.channelUrl)))
+const chatsArchivados = computed(() => chatsVisibles.value.filter(c => archivadosIds.value.has(c.channelUrl)))
+
 // Solo aplica al comprador: es quien vuelve de Stripe. El vendedor de una
 // venta califica al comprador desde su propio TradeConfirmModal cuando
 // verificarStatus detecta que el trato se completó (ver ese componente).
@@ -297,7 +406,10 @@ async function enviarCalificacionPostPago(valor) {
 
 const recargarChats = () => inicializarChats()
 
-onMounted(inicializarChats)
+onMounted(() => {
+  cargarArchivadosYEliminados()
+  inicializarChats()
+})
 
 onUnmounted(() => {
   if (pollingInterval) clearInterval(pollingInterval)
@@ -384,6 +496,11 @@ const abrirChat = async (chat) => {
 }
 
 const cleanId = (id) => String(id).replace('@', '_at_').replace(/\./g, '_')
+
+function irAlArticulo(articuloId) {
+  if (!articuloId) return
+  router.push({ name: 'articulo', params: { id: articuloId } })
+}
 
 const enviarMensaje = async () => {
   const texto = nuevoMensaje.value.trim()
@@ -517,11 +634,11 @@ const enviarArticuloAlChat = async (articulo) => {
       `Ofrecí: ${articulo.nombre}`,
       {
         customType: 'oferta_articulo',
-        data: JSON.stringify({
+        data: {
           articuloId: articulo.id,
           nombre: articulo.nombre,
           url: articulo.url || ''
-        })
+        }
       }
     );
 
@@ -576,6 +693,36 @@ const enviarArticuloAlChat = async (articulo) => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.archivados-section {
+  border-top: 2px solid #e8ddd0;
+  flex-shrink: 0;
+}
+
+.archivados-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #594542;
+  cursor: pointer;
+}
+.archivados-toggle:hover { background-color: #fafafa; }
+
+.archivados-caret {
+  transition: transform 0.15s;
+}
+.archivados-caret.open { transform: rotate(180deg); }
+
+.archivados-section .chat-list {
+  flex: none;
+  max-height: 260px;
 }
 
 .sidebar-empty {
@@ -752,18 +899,28 @@ const enviarArticuloAlChat = async (articulo) => {
   border-bottom-left-radius: 4px;
 }
 
-/* Tarjeta de oferta: imagen arriba, nombre abajo, borde rojo redondeado
-   (mismo estilo visual que .otro-card en TradeConfirmModal.vue) */
+/* Tarjeta de oferta: mismo lenguaje visual que ProductCard.vue (borde grueso,
+   esquinas bien redondeadas, imagen arriba) pero en tamaño compacto para el
+   chat. Ahora es clicable y lleva al detalle completo del artículo. */
 .oferta-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 130px;
-  border: 2px solid #FA2700;
-  border-radius: 14px;
+  width: 140px;
+  border: 3px solid var(--brand-brown, #FA2700);
+  border-radius: 18px;
   overflow: hidden;
   background: white;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
+.oferta-card:hover,
+.oferta-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  outline: none;
+}
+.oferta-card:active { transform: translateY(0); }
 
 .oferta-card-thumb {
   width: 100%;
@@ -782,6 +939,7 @@ const enviarArticuloAlChat = async (articulo) => {
   gap: 2px;
   padding: 8px 10px 10px;
   text-align: center;
+  background: var(--brand-cream, #fdf6ec);
 }
 
 .oferta-card-label {

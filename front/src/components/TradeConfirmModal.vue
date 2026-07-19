@@ -24,7 +24,7 @@
             v-for="art in misArticulosDisponibles"
             :key="art.id"
             class="articulo-row"
-            :class="{ agregado: idsYaAgregados.has(art.id) }"
+            :class="{ agregado: idsSeleccionados.has(art.id) }"
           >
             <img v-if="art.image" :src="art.image" class="articulo-thumb" />
             <div v-else class="articulo-thumb placeholder"></div>
@@ -32,9 +32,9 @@
             <input
               type="checkbox"
               class="articulo-check"
-              :checked="idsYaAgregados.has(art.id)"
-              :disabled="idsYaAgregados.has(art.id) || agregando"
-              @change="agregarArticulo(art.id)"
+              :checked="idsSeleccionados.has(art.id)"
+              :disabled="yaConfirme || procesando"
+              @change="toggleArticulo(art.id)"
             />
           </label>
         </div>
@@ -143,7 +143,6 @@ const auth = useAuthStore()
 
 const cargando = ref(true)
 const procesando = ref(false)
-const agregando = ref(false)
 const errorMsg = ref('')
 const yaConfirme = ref(false)
 const tratoCompletado = ref(false) // true cuando /transacciones/status confirma que ambos ya dieron OK
@@ -179,11 +178,41 @@ const errorPago = ref('')
 let pollingInterval = null
 let statusPollingInterval = null
 
-// ids de MIS artículos ya agregados a esta transacción
-const idsYaAgregados = computed(() => {
+// ids de MIS artículos que YA existen como detalle en el backend (se agregaron
+// en una sesión anterior de este mismo trato, antes de confirmar). Sirve para
+// no volver a mandar un addDetalle de algo que el backend ya tiene.
+const idsYaAgregadosBackend = computed(() => {
   const mios = detalles.value.filter(d => d.ofrecidoVendedor === esVendedor.value)
   return new Set(mios.map(d => d.articulo.id))
 })
+
+// Selección local: lo que el usuario va marcando en la UI. No se manda nada
+// al backend hasta que le da "Finalizar" (ver confirmarTrato). Esto es lo que
+// permite deseleccionar libremente, sin necesitar un endpoint de borrado.
+const misSeleccionados = ref(new Set())
+
+// Unión de lo ya confirmado en backend + lo que se está seleccionando ahora
+// mismo en esta sesión del modal. Es lo que se pinta como marcado en la UI.
+const idsSeleccionados = computed(() => {
+  const combinado = new Set(idsYaAgregadosBackend.value)
+  misSeleccionados.value.forEach(id => combinado.add(id))
+  return combinado
+})
+
+function toggleArticulo(articuloId) {
+  if (yaConfirme.value || procesando.value) return
+  // Si ya está confirmado en el backend de una sesión anterior, no se puede
+  // "desmarcar" sin un endpoint de borrado — se deja fijo y solo se avisa.
+  if (idsYaAgregadosBackend.value.has(articuloId)) return
+
+  const nuevo = new Set(misSeleccionados.value)
+  if (nuevo.has(articuloId)) {
+    nuevo.delete(articuloId)
+  } else {
+    nuevo.add(articuloId)
+  }
+  misSeleccionados.value = nuevo
+}
 
 // lo que el OTRO usuario ya ofreció
 const articulosOtro = computed(() => {
@@ -230,11 +259,13 @@ async function cargarTodo() {
     vendedorIdRef.value = vendedorId
     esVendedor.value = String(vendedorId) === String(auth.user.id)
 
-    misArticulosPublicados.value = (misRes.data || []).map(a => ({
-      id: a.id,
-      title: a.nombre,
-      image: a.url || ''
-    }))
+    misArticulosPublicados.value = (misRes.data || [])
+      .filter(a => a.disponible !== false)
+      .map(a => ({
+        id: a.id,
+        title: a.nombre,
+        image: a.url || ''
+      }))
 
     // 2. La transacción depende de saber esTrueque del artículo, así que va después,
     //    pero detalles se puede pedir apenas la transacción exista.
@@ -260,26 +291,23 @@ async function refrescarDetalles() {
   }
 }
 
-async function agregarArticulo(articuloId) {
-  if (idsYaAgregados.value.has(articuloId) || agregando.value) return
-  agregando.value = true
-  try {
-    console.log('[agregarArticulo] payload -> chatId:', props.chatId, '| articuloId:', articuloId)
-    await transaccionesApi.addDetalle(props.chatId, articuloId)
-    await refrescarDetalles()
-  } catch (e) {
-    console.error('Error agregando artículo:', e)
-    errorMsg.value = 'No se pudo agregar el artículo. Intenta de nuevo.'
-  } finally {
-    agregando.value = false
-  }
-}
-
 async function confirmarTrato() {
   procesando.value = true
   errorMsg.value = ''
   try {
-    const misIds = Array.from(idsYaAgregados.value)
+    const misIds = Array.from(idsSeleccionados.value)
+
+    // Solo mandamos addDetalle de lo que el backend todavía no tiene
+    // registrado (lo seleccionado ahora en esta sesión del modal).
+    const pendientes = misIds.filter(id => !idsYaAgregadosBackend.value.has(id))
+    for (const articuloId of pendientes) {
+      console.log('[confirmarTrato] sincronizando detalle pendiente -> chatId:', props.chatId, '| articuloId:', articuloId)
+      await transaccionesApi.addDetalle(props.chatId, articuloId)
+    }
+    if (pendientes.length > 0) {
+      await refrescarDetalles()
+    }
+
     const precio = !transaccion.value?.esTrueque && !esVendedor.value ? precioOferta.value : null
     console.log('[confirmarTrato] payload -> chatId:', props.chatId, '| articulos:', misIds, '| precio:', precio)
     await transaccionesApi.confirmar(props.chatId, misIds, precio)
