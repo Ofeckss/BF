@@ -74,6 +74,7 @@
               :status="art.status"
               :tags="art.tags"
               :image="art.image"
+              :esTrueque="art.esTrueque"
             />
           </div>
         </div>
@@ -101,6 +102,7 @@
               :status="art.status"
               :tags="art.tags"
               :image="art.image"
+              :esTrueque="art.esTrueque"
             />
           </div>
         </div>
@@ -166,6 +168,7 @@ onMounted(async () => {
       location: a.ubicacion?.nombre || 'Playa del Carmen',
       status: a.disponible ? 'Disponible' : 'No disponible',
       tags: a.categoria ? [a.categoria.nombre] : [],
+      esTrueque: a.esTrueque,
       image: ''
     }))
     // Cargar fotos
